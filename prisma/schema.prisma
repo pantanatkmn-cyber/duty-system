@@ -1,0 +1,171 @@
+// Prisma schema สำหรับระบบตรวจการเข้าเวร
+// ใช้ SQLite สำหรับ dev — เปลี่ยน provider เป็น postgresql/mysql ภายหลังได้
+// หมายเหตุ: หากย้ายไป PostgreSQL ฟิลด์ String[] จะใช้ได้ตรง ๆ
+// แต่ SQLite ไม่รองรับ array จึงเก็บ photos แยกเป็น relation table
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+// ====================================================================
+// USER & ROLE
+// ====================================================================
+// หมายเหตุ: SQLite ไม่รองรับ enum จึงใช้ String แทน
+// ค่าที่ใช้ใน role: "ADMIN" / "CHIEF" / "TEACHER"
+
+model User {
+  id           Int      @id @default(autoincrement())
+  username     String   @unique
+  passwordHash String
+  fullName     String
+  email        String?  @unique
+  phone        String?
+  role         String   @default("TEACHER") // ADMIN / CHIEF / TEACHER (SQLite ไม่รองรับ enum)
+  active       Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  // Relations
+  assignments     DutyAssignment[]
+  chiefAssignments ChiefAssignment[]
+}
+
+// ====================================================================
+// DUTY TYPE - ประเภทเวร (กำหนดเวลาเริ่ม/สิ้นสุดของแต่ละเวร)
+// ====================================================================
+// category:
+//   FRONT_GATE  = เวรประตูหน้า
+//   POINT       = เวรประจำจุด
+//   PERIOD      = เวรคาบ
+
+model DutyType {
+  id          Int      @id @default(autoincrement())
+  code        String   @unique // เช่น FRONT_GATE, POINT_SIDE_GATE, PERIOD_1
+  name        String   // ชื่อภาษาไทยที่แสดง
+  category    String   // FRONT_GATE / POINT / PERIOD
+  startTime   String   // เก็บเป็น "HH:mm" เช่น "07:30"
+  endTime     String   // "08:20"
+  description String?
+  active      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+
+  assignments DutyAssignment[]
+}
+
+// ====================================================================
+// DUTY ASSIGNMENT - มอบหมายเวรให้ครู (ผู้ใช้ + เวร + วันที่)
+// ====================================================================
+
+model DutyAssignment {
+  id         Int      @id @default(autoincrement())
+  userId     Int
+  dutyTypeId Int
+  dutyDate   DateTime // เก็บแค่วัน (ตั้งเวลาเป็น 00:00)
+  note       String?  // หมายเหตุจาก admin
+  createdAt  DateTime @default(now())
+
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  dutyType  DutyType  @relation(fields: [dutyTypeId], references: [id], onDelete: Restrict)
+  checkIn   CheckIn?
+  incidents IncidentReport[]
+
+  @@unique([userId, dutyTypeId, dutyDate]) // กันมอบหมายซ้ำ
+  @@index([dutyDate])
+  @@index([userId])
+}
+
+// ====================================================================
+// CHIEF ASSIGNMENT - หัวหน้าเวรประจำวัน (admin กำหนดแยก)
+// ====================================================================
+
+model ChiefAssignment {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  dutyDate  DateTime
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, dutyDate])
+  @@index([dutyDate])
+}
+
+// ====================================================================
+// CHECK-IN - การเช็กอินการเข้าเวร (ครูกดถ่ายรูป)
+// ====================================================================
+// status:
+//   ON_TIME = ตรงเวลา
+//   LATE    = สาย (เกินเวลาเริ่ม + grace period)
+//   ABSENT  = ขาด (ระบบ mark อัตโนมัติเมื่อพ้นเวลาสิ้นสุดและยังไม่เช็กอิน)
+
+model CheckIn {
+  id           Int      @id @default(autoincrement())
+  assignmentId Int      @unique
+  checkInTime  DateTime @default(now())
+  photoPath    String
+  status       String   // EARLY / ON_TIME / LATE
+  note         String?
+  latitude     Float?
+  longitude    Float?
+  // === ออกเวร ===
+  checkOutTime   DateTime?
+  checkOutPhoto  String?
+  checkOutStatus String?  // EARLY_OUT / ON_TIME_OUT / LATE_OUT
+
+  assignment DutyAssignment @relation(fields: [assignmentId], references: [id], onDelete: Cascade)
+}
+
+// ====================================================================
+// INCIDENT REPORT - รายงานเหตุการณ์ผิดปกติ (สูงสุด 5 ต่อ assignment)
+// ====================================================================
+
+model IncidentReport {
+  id           Int      @id @default(autoincrement())
+  assignmentId Int
+  incidentType String   // ประเภทเหตุการณ์: "พบความสกปรกในพื้นที่" ฯลฯ
+  description  String   // รายละเอียดเพิ่มเติม (อาจเป็นสตริงว่างได้)
+  reportedAt   DateTime @default(now())
+
+  assignment DutyAssignment @relation(fields: [assignmentId], references: [id], onDelete: Cascade)
+  photos     IncidentPhoto[]
+
+  @@index([assignmentId])
+}
+
+model IncidentPhoto {
+  id         Int    @id @default(autoincrement())
+  incidentId Int
+  photoPath  String
+
+  incident IncidentReport @relation(fields: [incidentId], references: [id], onDelete: Cascade)
+}
+
+// ====================================================================
+// SYSTEM SETTING - ค่าตั้งระบบ (admin แก้ไขได้)
+// ====================================================================
+// key ที่ใช้:
+//   grace_period_minutes  = นาทีผ่อนผันก่อนนับเป็น "สาย" (ค่า default 5)
+
+model SystemSetting {
+  key       String   @id
+  value     String
+  updatedAt DateTime @updatedAt
+}
+
+// ====================================================================
+// HOLIDAY - วันหยุด (admin กำหนด)
+// ====================================================================
+
+model Holiday {
+  id          Int      @id @default(autoincrement())
+  date        DateTime // เก็บแค่วัน (เวลา 00:00)
+  description String   // เช่น "วันหยุดนักขัตฤกษ์", "วันหยุดชดเชย"
+  createdAt   DateTime @default(now())
+
+  @@unique([date])
+  @@index([date])
+}

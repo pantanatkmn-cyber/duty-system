@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(Get-ChildItem D:\\\\duty-app\\\\duty-system-phase1\\\\duty-system -Recurse -Depth 2)",
+      "Bash(Select-Object FullName, PSIsContainer)",
+      "Bash(Format-Table -AutoSize)",
+      "PowerShell(Get-ChildItem D:\\\\duty-app\\\\duty-system-phase1\\\\duty-system -Recurse -Depth 3 | Where-Object { !$_.PSIsContainer } | Select-Object FullName | Format-Table -AutoSize)",
+      "PowerShell(Get-ChildItem D:\\\\duty-app\\\\duty-system-phase1\\\\duty-system\\\\src -Recurse | Where-Object { !$_.PSIsContainer } | Select-Object -ExpandProperty FullName)",
+      "Bash(npm run *)",
+      "Bash(npx prisma *)",
+      "Bash(mkdir -p \"D:\\\\duty-app\\\\duty-system-phase1\\\\duty-system\\\\src\\\\app\\\\api\\\\admin\\\\holidays\\\\[id]\")",
+      "Bash(npx tsc *)"
+    ]
+  }
+}
