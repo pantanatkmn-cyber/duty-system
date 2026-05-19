@@ -47,6 +47,16 @@ export function AssignmentManager({
     if (d) router.push(`/admin/assignments?date=${d}`);
   }
 
+  async function handleClearAll() {
+    if (!confirm(`ล้างเวรทั้งหมดในวันที่ ${dateStr} ออก?\nข้อมูลเช็กอินและรายงานเหตุการณ์ในวันนั้นจะถูกลบด้วย`)) return;
+    const res = await fetch(`/api/admin/assignments?date=${dateStr}`, { method: "DELETE" });
+    const data = await res.json();
+    if (!res.ok) { setMsg({ type: "err", text: data.error ?? "ลบไม่สำเร็จ" }); return; }
+    setAssignments([]);
+    setAddingDutyTypeId(null);
+    setMsg({ type: "ok", text: `ล้างเวรทั้งหมด ${data.deleted} รายการแล้ว` });
+  }
+
   function openAdd(dutyTypeId: number) {
     setAddingDutyTypeId(dutyTypeId);
     setSelectedUserId("");
@@ -111,9 +121,17 @@ export function AssignmentManager({
             className="form-input text-sm w-auto"
           />
           {dateStr === todayStr && <span className="badge badge-success text-xs">วันนี้</span>}
-          <span className="text-xs text-gray-400 ml-auto">
-            รวม {assignments.length} เวร
-          </span>
+          <div className="ml-auto flex items-center gap-3">
+            <span className="text-xs text-gray-400">รวม {assignments.length} เวร</span>
+            {assignments.length > 0 && (
+              <button
+                onClick={handleClearAll}
+                className="text-xs text-red-500 hover:text-red-700 font-medium border border-red-200 hover:border-red-400 rounded-lg px-3 py-1.5 transition"
+              >
+                🗑️ ล้างเวรทั้งหมดวันนี้
+              </button>
+            )}
+          </div>
         </div>
       </div>
 

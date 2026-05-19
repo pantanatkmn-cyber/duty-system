@@ -30,8 +30,9 @@ model User {
   updatedAt    DateTime @updatedAt
 
   // Relations
-  assignments     DutyAssignment[]
-  chiefAssignments ChiefAssignment[]
+  assignments            DutyAssignment[]
+  chiefAssignments       ChiefAssignment[]
+  weeklyChiefAssignments WeeklyChiefAssignment[]
 }
 
 // ====================================================================
@@ -154,6 +155,22 @@ model SystemSetting {
   key       String   @id
   value     String
   updatedAt DateTime @updatedAt
+}
+
+// ====================================================================
+// WEEKLY CHIEF ASSIGNMENT - หัวหน้าเวรประจำวันในสัปดาห์
+// ====================================================================
+// dayOfWeek: 1=จันทร์, 2=อังคาร, 3=พุธ, 4=พฤหัสบดี, 5=ศุกร์
+
+model WeeklyChiefAssignment {
+  id        Int      @id @default(autoincrement())
+  dayOfWeek Int      // 1-5
+  userId    Int
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([dayOfWeek])
 }
 
 // ====================================================================

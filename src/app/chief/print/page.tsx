@@ -60,6 +60,10 @@ export default async function PrintPage({ searchParams }: Props) {
   const startOfDay = new Date(year, month - 1, day, 0, 0, 0);
   const startOfNextDay = new Date(year, month - 1, day + 1, 0, 0, 0);
 
+  // แปลง JS getDay() → dayOfWeek (1=จันทร์…5=ศุกร์)
+  const jsDay = new Date(year, month - 1, day).getDay();
+  const dayOfWeek = jsDay === 0 ? 7 : jsDay;
+
   // ดึงข้อมูล
   const [assignments, chiefAssignment] = await Promise.all([
     prisma.dutyAssignment.findMany({
@@ -72,8 +76,8 @@ export default async function PrintPage({ searchParams }: Props) {
       },
       orderBy: [{ dutyType: { startTime: "asc" } }, { user: { fullName: "asc" } }],
     }),
-    prisma.chiefAssignment.findFirst({
-      where: { dutyDate: { gte: startOfDay, lt: startOfNextDay } },
+    prisma.weeklyChiefAssignment.findUnique({
+      where: { dayOfWeek },
       include: { user: { select: { fullName: true } } },
     }),
   ]);

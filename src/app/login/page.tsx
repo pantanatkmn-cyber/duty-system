@@ -130,16 +130,6 @@ function LoginForm() {
             </button>
           </form>
 
-          {/* บัญชีทดสอบ - แสดงเฉพาะ dev */}
-          <div className="mt-6 pt-6 border-t border-gray-200">
-            <p className="text-xs text-gray-500 mb-2 font-medium">
-              บัญชีทดสอบ (สำหรับ dev):
-            </p>
-            <ul className="text-xs text-gray-600 space-y-1">
-              <li>• Admin: <code className="bg-gray-100 px-1 rounded">admin</code> / <code className="bg-gray-100 px-1 rounded">admin123</code></li>
-              <li>• ครู: <code className="bg-gray-100 px-1 rounded">teacher1</code> / <code className="bg-gray-100 px-1 rounded">password123</code></li>
-            </ul>
-          </div>
         </div>
 
         <p className="text-center text-xs text-gray-400 mt-6">

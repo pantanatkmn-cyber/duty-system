@@ -26,6 +26,39 @@ export async function GET(req: NextRequest) {
   return NextResponse.json({ assignments });
 }
 
+export async function DELETE(req: NextRequest) {
+  const { error } = await requireAdmin();
+  if (error) return error;
+
+  const { searchParams } = new URL(req.url);
+  const dateStr = searchParams.get("date");
+  if (!dateStr) return NextResponse.json({ error: "ต้องระบุวันที่" }, { status: 400 });
+
+  const [year, month, day] = dateStr.split("-").map(Number);
+  const startOfDay = new Date(year, month - 1, day, 0, 0, 0);
+  const startOfNextDay = new Date(year, month - 1, day + 1, 0, 0, 0);
+
+  // ลบ CheckIn/CheckOut และ Incident ที่เชื่อมกับ assignment ในวันนั้นก่อน
+  const assignmentIds = (
+    await prisma.dutyAssignment.findMany({
+      where: { dutyDate: { gte: startOfDay, lt: startOfNextDay } },
+      select: { id: true },
+    })
+  ).map((a) => a.id);
+
+  if (assignmentIds.length > 0) {
+    await prisma.incidentPhoto.deleteMany({ where: { incident: { assignmentId: { in: assignmentIds } } } });
+    await prisma.incidentReport.deleteMany({ where: { assignmentId: { in: assignmentIds } } });
+    await prisma.checkIn.deleteMany({ where: { assignmentId: { in: assignmentIds } } });
+  }
+
+  const result = await prisma.dutyAssignment.deleteMany({
+    where: { dutyDate: { gte: startOfDay, lt: startOfNextDay } },
+  });
+
+  return NextResponse.json({ deleted: result.count });
+}
+
 export async function POST(req: NextRequest) {
   const { error } = await requireAdmin();
   if (error) return error;

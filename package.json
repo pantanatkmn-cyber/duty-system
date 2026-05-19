@@ -12,7 +12,8 @@
     "db:seed": "tsx prisma/seed.ts",
     "db:studio": "prisma studio",
     "db:reset": "prisma db push --force-reset && npm run db:seed",
-    "db:seed-real": "tsx prisma/seed-real.ts"
+    "db:seed-real": "tsx prisma/seed-real.ts",
+    "db:clear-assignments": "tsx prisma/clear-assignments.ts"
   },
   "dependencies": {
     "@prisma/client": "^5.22.0",
