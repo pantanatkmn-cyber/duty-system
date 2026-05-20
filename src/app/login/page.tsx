@@ -42,22 +42,11 @@ function LoginForm() {
       <div className="w-full max-w-md">
         {/* โลโก้/ชื่อระบบ */}
         <div className="text-center mb-8">
-          <div className="inline-flex h-16 w-16 items-center justify-center rounded-2xl bg-brand-orange-500 shadow-lg mb-4">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              className="h-9 w-9 text-white"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-              strokeWidth={2}
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-              />
-            </svg>
-          </div>
+          <img
+            src="/logo.png"
+            alt="วิทยาลัยเทคโนโลยีสันตพล"
+            className="h-24 w-24 rounded-full object-cover shadow-lg mx-auto mb-4 border-4 border-brand-orange-400"
+          />
           <h1 className="text-2xl font-bold text-gray-800">
             ระบบตรวจการเข้าเวร
           </h1>

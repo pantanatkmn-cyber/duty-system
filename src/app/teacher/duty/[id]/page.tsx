@@ -7,6 +7,7 @@ import { LogoutButton } from "@/app/dashboard/logout-button";
 import { CheckInSection } from "./check-in-section";
 import { CheckoutSection } from "./checkout-section";
 import { IncidentSection } from "./incident-section";
+import { TeacherNoteSection } from "./teacher-note-section";
 
 const CATEGORY_ICON: Record<string, string> = {
   FRONT_GATE: "🏫",
@@ -64,11 +65,7 @@ export default async function DutyDetailPage({ params }: Props) {
       <header className="bg-white border-b border-gray-200 shadow-sm">
         <div className="max-w-2xl mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="h-10 w-10 rounded-lg bg-brand-orange-500 flex items-center justify-center">
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-            </div>
+            <img src="/logo.png" alt="โลโก้" className="h-10 w-10 rounded-full object-cover border-2 border-brand-orange-300 shrink-0" />
             <div>
               <h1 className="font-semibold text-gray-800 leading-tight text-sm">ระบบตรวจการเข้าเวร</h1>
               <p className="text-xs text-gray-500">วิทยาลัยเทคโนโลยีสันตพล</p>
@@ -158,7 +155,15 @@ export default async function DutyDetailPage({ params }: Props) {
           </>
         )}
 
-        {/* รายงานเหตุการณ์ */}
+        {/* หมายเหตุจากครู */}
+        {!holiday && (
+          <TeacherNoteSection
+            assignmentId={assignment.id}
+            initialNote={assignment.teacherNote ?? null}
+          />
+        )}
+
+        {/* รายงานเหตุการณ์ผิดปกติ */}
         {!holiday && (
           <IncidentSection
             assignmentId={assignment.id}

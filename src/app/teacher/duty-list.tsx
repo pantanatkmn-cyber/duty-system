@@ -78,7 +78,7 @@ export function DutyList({ assignments, userName }: Props) {
               key={a.id}
               className={`card !p-0 overflow-hidden border-l-4 ${
                 checked
-                  ? status === "ON_TIME"
+                  ? status === "ON_TIME" || status === "EARLY"
                     ? "border-green-500"
                     : "border-yellow-500"
                   : "border-gray-300"
@@ -120,10 +120,18 @@ export function DutyList({ assignments, userName }: Props) {
                     <div className="flex items-center gap-2 mt-2">
                       <span
                         className={`badge ${
-                          status === "ON_TIME" ? "badge-success" : "badge-warning"
+                          status === "ON_TIME"
+                            ? "badge-success"
+                            : status === "EARLY"
+                            ? "badge-info"
+                            : "badge-warning"
                         }`}
                       >
-                        {status === "ON_TIME" ? "✓ ตรงเวลา" : "⚠ มาสาย"}
+                        {status === "ON_TIME"
+                          ? "✓ ตรงเวลา"
+                          : status === "EARLY"
+                          ? "⏰ มาก่อนเวลา"
+                          : "⚠ มาสาย"}
                       </span>
                       <span className="text-xs text-gray-500">
                         เช็กอิน {formatThaiTime(a.checkIn.checkInTime)}

@@ -8,7 +8,7 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "sqlite"
   url      = env("DATABASE_URL")
 }
 // ====================================================================
@@ -66,8 +66,9 @@ model DutyAssignment {
   userId     Int
   dutyTypeId Int
   dutyDate   DateTime // เก็บแค่วัน (ตั้งเวลาเป็น 00:00)
-  note       String?  // หมายเหตุจาก admin
-  createdAt  DateTime @default(now())
+  note        String?  // หมายเหตุจาก admin
+  teacherNote String?  // หมายเหตุจากครู (บันทึกสรุปการปฏิบัติเวร)
+  createdAt   DateTime @default(now())
 
   user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   dutyType  DutyType  @relation(fields: [dutyTypeId], references: [id], onDelete: Restrict)
