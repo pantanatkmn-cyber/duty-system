@@ -3,9 +3,10 @@
 import { signOut } from "next-auth/react";
 
 export function LogoutButton() {
-  const handleLogout = async () => {
-    await signOut({ redirect: false });
-    window.location.href = "/login";
+  const handleLogout = () => {
+    // ใช้ window.location.origin เพื่อสร้าง URL จริงของ server ปัจจุบัน
+    // ป้องกันปัญหา NEXTAUTH_URL ไม่ตรงกับ URL จริงใน production
+    signOut({ callbackUrl: window.location.origin + "/login" });
   };
 
   return (
