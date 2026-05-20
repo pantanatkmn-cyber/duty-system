@@ -2,8 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { writeFile, mkdir } from "fs/promises";
-import path from "path";
+import { uploadPhoto } from "@/lib/upload";
 
 export async function POST(req: NextRequest) {
   const session = await getServerSession(authOptions);
@@ -36,14 +35,8 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "เช็กอินไปแล้ว" }, { status: 409 });
   }
 
-  // บันทึกไฟล์ภาพ
-  const bytes = await photo.arrayBuffer();
-  const buffer = Buffer.from(bytes);
-  const filename = `${userId}_${assignmentId}_${Date.now()}.jpg`;
-  const uploadDir = path.join(process.cwd(), "public", "uploads", "checkin");
-  await mkdir(uploadDir, { recursive: true });
-  await writeFile(path.join(uploadDir, filename), buffer);
-  const photoPath = `/uploads/checkin/${filename}`;
+  // อัปโหลดรูปภาพ (Vercel Blob หรือ local ขึ้นกับ environment)
+  const photoPath = await uploadPhoto(photo, "checkin");
 
   // ดึง grace period จาก SystemSetting (default 5 นาที)
   const graceSetting = await prisma.systemSetting.findUnique({

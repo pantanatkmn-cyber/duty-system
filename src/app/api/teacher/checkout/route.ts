@@ -2,8 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { writeFile, mkdir } from "fs/promises";
-import path from "path";
+import { uploadPhoto } from "@/lib/upload";
 
 export async function POST(req: NextRequest) {
   const session = await getServerSession(authOptions);
@@ -28,14 +27,8 @@ export async function POST(req: NextRequest) {
   if (!assignment.checkIn) return NextResponse.json({ error: "ยังไม่ได้เช็กอินเข้าเวร" }, { status: 400 });
   if (assignment.checkIn.checkOutTime) return NextResponse.json({ error: "ออกเวรไปแล้ว" }, { status: 409 });
 
-  // บันทึกไฟล์ภาพ
-  const bytes = await photo.arrayBuffer();
-  const buffer = Buffer.from(bytes);
-  const filename = `checkout_${userId}_${assignmentId}_${Date.now()}.jpg`;
-  const uploadDir = path.join(process.cwd(), "public", "uploads", "checkout");
-  await mkdir(uploadDir, { recursive: true });
-  await writeFile(path.join(uploadDir, filename), buffer);
-  const checkOutPhoto = `/uploads/checkout/${filename}`;
+  // อัปโหลดรูปภาพ (Vercel Blob หรือ local ขึ้นกับ environment)
+  const checkOutPhoto = await uploadPhoto(photo, "checkout");
 
   // คำนวณสถานะออกเวร
   const now = new Date();
