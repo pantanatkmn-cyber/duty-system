@@ -28,7 +28,16 @@ export async function POST(req: NextRequest) {
   if (assignment.checkIn.checkOutTime) return NextResponse.json({ error: "ออกเวรไปแล้ว" }, { status: 409 });
 
   // อัปโหลดรูปภาพ (Vercel Blob หรือ local ขึ้นกับ environment)
-  const checkOutPhoto = await uploadPhoto(photo, "checkout");
+  let checkOutPhoto: string;
+  try {
+    checkOutPhoto = await uploadPhoto(photo, "checkout");
+  } catch (uploadErr) {
+    console.error("Upload error:", uploadErr);
+    return NextResponse.json(
+      { error: "อัปโหลดรูปภาพไม่สำเร็จ กรุณาตรวจสอบการตั้งค่า BLOB_READ_WRITE_TOKEN" },
+      { status: 500 }
+    );
+  }
 
   // คำนวณสถานะออกเวร
   const now = new Date();

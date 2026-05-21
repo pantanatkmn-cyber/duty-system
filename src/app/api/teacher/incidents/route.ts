@@ -45,7 +45,15 @@ export async function POST(req: NextRequest) {
   // อัปโหลดรูปภาพถ้ามี (Vercel Blob หรือ local ขึ้นกับ environment)
   let photoPath: string | null = null;
   if (photo && photo.size > 0) {
-    photoPath = await uploadPhoto(photo, "incidents");
+    try {
+      photoPath = await uploadPhoto(photo, "incidents");
+    } catch (uploadErr) {
+      console.error("Upload error:", uploadErr);
+      return NextResponse.json(
+        { error: "อัปโหลดรูปภาพไม่สำเร็จ กรุณาตรวจสอบการตั้งค่า BLOB_READ_WRITE_TOKEN" },
+        { status: 500 }
+      );
+    }
   }
 
   // สร้าง IncidentReport พร้อม photo ถ้ามี

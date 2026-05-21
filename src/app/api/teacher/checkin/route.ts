@@ -36,7 +36,16 @@ export async function POST(req: NextRequest) {
   }
 
   // อัปโหลดรูปภาพ (Vercel Blob หรือ local ขึ้นกับ environment)
-  const photoPath = await uploadPhoto(photo, "checkin");
+  let photoPath: string;
+  try {
+    photoPath = await uploadPhoto(photo, "checkin");
+  } catch (uploadErr) {
+    console.error("Upload error:", uploadErr);
+    return NextResponse.json(
+      { error: "อัปโหลดรูปภาพไม่สำเร็จ กรุณาตรวจสอบการตั้งค่า BLOB_READ_WRITE_TOKEN" },
+      { status: 500 }
+    );
+  }
 
   // ดึง grace period จาก SystemSetting (default 5 นาที)
   const graceSetting = await prisma.systemSetting.findUnique({
