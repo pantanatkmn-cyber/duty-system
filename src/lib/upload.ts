@@ -7,9 +7,10 @@ export async function uploadPhoto(file: File, folder: string): Promise<string> {
 
   if (token) {
     // === Vercel Blob (production) ===
+    // ให้ library อ่าน token จาก env อัตโนมัติ ไม่ส่งผ่าน parameter
     const { put } = await import("@vercel/blob");
-    const filename = `${folder}/${Date.now()}_${Math.random().toString(36).slice(2)}.jpg`;
-    const blob = await put(filename, file, { access: "public", token });
+    const uniqueName = `${Date.now()}_${Math.random().toString(36).slice(2)}.jpg`;
+    const blob = await put(`${folder}/${uniqueName}`, file, { access: "public" });
     return blob.url;
   } else {
     // === Local filesystem (development) ===
