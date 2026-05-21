@@ -40,6 +40,26 @@ export default async function StatsPage({ searchParams }: Props) {
     rangeLabel = "สัปดาห์นี้ (จันทร์ถึงวันนี้)";
   }
 
+  // ดึงข้อมูลเหตุการณ์ผิดปกติในช่วงเวลา
+  const incidents = await prisma.incidentReport.findMany({
+    where: { reportedAt: { gte: startDate, lt: endDate } },
+    select: { incidentType: true, reportedAt: true },
+  });
+
+  // จัดกลุ่มและนับตามประเภทเหตุการณ์
+  const incidentMap = new Map<string, number>();
+  for (const inc of incidents) {
+    incidentMap.set(inc.incidentType, (incidentMap.get(inc.incidentType) ?? 0) + 1);
+  }
+  const totalIncidents = incidents.length;
+  const incidentRanking = Array.from(incidentMap.entries())
+    .map(([type, count]) => ({
+      type,
+      count,
+      pct: totalIncidents > 0 ? Math.round((count / totalIncidents) * 100) : 0,
+    }))
+    .sort((a, b) => b.count - a.count);
+
   // ดึงข้อมูล assignments ในช่วงเวลา
   const assignments = await prisma.dutyAssignment.findMany({
     where: { dutyDate: { gte: startDate, lt: endDate } },
@@ -161,6 +181,61 @@ export default async function StatsPage({ searchParams }: Props) {
             <p className="text-xs mt-1 opacity-80">{s.label}</p>
           </div>
         ))}
+      </div>
+
+      {/* ===== สถิติเหตุการณ์ผิดปกติ ===== */}
+      <div>
+        <h3 className="text-lg font-bold text-gray-800 mb-3">
+          เหตุการณ์ผิดปกติที่รายงาน
+          <span className="ml-2 text-sm font-normal text-gray-400">
+            ({totalIncidents} รายการ)
+          </span>
+        </h3>
+
+        {totalIncidents === 0 ? (
+          <div className="card text-center py-8">
+            <p className="text-gray-400 text-sm">ไม่มีรายงานเหตุการณ์ในช่วงเวลาที่เลือก</p>
+          </div>
+        ) : (
+          <div className="card space-y-3">
+            {incidentRanking.map((item, i) => (
+              <div key={item.type}>
+                <div className="flex items-center justify-between mb-1">
+                  <div className="flex items-center gap-2">
+                    <span className={`text-xs font-bold w-5 text-center rounded-full py-0.5
+                      ${i === 0 ? "bg-red-100 text-red-600" :
+                        i === 1 ? "bg-orange-100 text-orange-600" :
+                        i === 2 ? "bg-yellow-100 text-yellow-600" :
+                                  "bg-gray-100 text-gray-500"}`}>
+                      {i + 1}
+                    </span>
+                    <span className="text-sm font-medium text-gray-800">{item.type}</span>
+                  </div>
+                  <div className="flex items-center gap-3 shrink-0">
+                    <span className="text-sm font-bold text-gray-700">{item.count} ครั้ง</span>
+                    <span className={`text-xs font-semibold px-2 py-0.5 rounded-full
+                      ${item.pct >= 30 ? "bg-red-100 text-red-700" :
+                        item.pct >= 15 ? "bg-orange-100 text-orange-700" :
+                                         "bg-gray-100 text-gray-600"}`}>
+                      {item.pct}%
+                    </span>
+                  </div>
+                </div>
+                {/* Progress bar */}
+                <div className="h-2 bg-gray-100 rounded-full overflow-hidden ml-7">
+                  <div
+                    className={`h-full rounded-full transition-all
+                      ${i === 0 ? "bg-red-500" :
+                        i === 1 ? "bg-orange-400" :
+                        i === 2 ? "bg-yellow-400" :
+                                  "bg-gray-300"}`}
+                    style={{ width: `${item.pct}%` }}
+                  />
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* ตารางสถิติรายบุคคล */}
