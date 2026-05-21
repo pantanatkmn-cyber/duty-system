@@ -1,30 +1,25 @@
-// helper อัปโหลดรูป
-// - มี BLOB_READ_WRITE_TOKEN (production/Vercel) → ใช้ Vercel Blob
-// - ไม่มี token (local dev) → เก็บใน public/uploads/
+// helper สำหรับ upload รูป
+// - Production (มี BLOB_READ_WRITE_TOKEN): ใช้ Vercel Blob
+// - Development (ไม่มี token): ใช้ local filesystem ใน public/uploads/
 
-import { put } from "@vercel/blob";
-import { writeFile, mkdir } from "fs/promises";
-import path from "path";
+export async function uploadPhoto(file: File, folder: string): Promise<string> {
+  const token = process.env.BLOB_READ_WRITE_TOKEN;
 
-export async function uploadPhoto(
-  file: File,
-  folder: "checkin" | "checkout" | "incidents"
-): Promise<string> {
-  const filename = `${folder}_${Date.now()}.jpg`;
-
-  if (process.env.BLOB_READ_WRITE_TOKEN) {
-    // === Production: Vercel Blob ===
-    const blob = await put(`${folder}/${filename}`, file, {
-      access: "public",
-    });
+  if (token) {
+    // === Vercel Blob (production) ===
+    const { put } = await import("@vercel/blob");
+    const filename = `${folder}/${Date.now()}_${Math.random().toString(36).slice(2)}.jpg`;
+    const blob = await put(filename, file, { access: "public", token });
     return blob.url;
   } else {
-    // === Local dev: เก็บใน public/uploads/ ===
-    const bytes = await file.arrayBuffer();
-    const buffer = Buffer.from(bytes);
-    const uploadDir = path.join(process.cwd(), "public", "uploads", folder);
+    // === Local filesystem (development) ===
+    const { writeFile, mkdir } = await import("fs/promises");
+    const { join } = await import("path");
+    const filename = `${Date.now()}_${Math.random().toString(36).slice(2)}.jpg`;
+    const uploadDir = join(process.cwd(), "public", "uploads", folder);
     await mkdir(uploadDir, { recursive: true });
-    await writeFile(path.join(uploadDir, filename), buffer);
+    const bytes = await file.arrayBuffer();
+    await writeFile(join(uploadDir, filename), Buffer.from(bytes));
     return `/uploads/${folder}/${filename}`;
   }
 }
