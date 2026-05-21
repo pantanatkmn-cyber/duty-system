@@ -3,17 +3,18 @@
 // - Development (ไม่มี token): ใช้ local filesystem ใน public/uploads/
 
 export async function uploadPhoto(file: File, folder: string): Promise<string> {
-  const token = process.env.BLOB_READ_WRITE_TOKEN;
+  // ตรวจว่ารันบน Vercel หรือเปล่า (Vercel ตั้ง env นี้อัตโนมัติ)
+  const isVercel = !!process.env.VERCEL;
 
-  if (token) {
-    // === Vercel Blob (production) ===
-    // ให้ library อ่าน token จาก env อัตโนมัติ ไม่ส่งผ่าน parameter
+  if (isVercel) {
+    // === Vercel Blob (production/preview) ===
+    // token อ่านอัตโนมัติจาก OIDC หรือ BLOB_READ_WRITE_TOKEN
     const { put } = await import("@vercel/blob");
-    const uniqueName = `${Date.now()}_${Math.random().toString(36).slice(2)}.jpg`;
-    const blob = await put(`${folder}/${uniqueName}`, file, { access: "public" });
+    const uniqueName = `${folder}/${Date.now()}_${Math.random().toString(36).slice(2)}.jpg`;
+    const blob = await put(uniqueName, file, { access: "public" });
     return blob.url;
   } else {
-    // === Local filesystem (development) ===
+    // === Local filesystem (development เท่านั้น) ===
     const { writeFile, mkdir } = await import("fs/promises");
     const { join } = await import("path");
     const filename = `${Date.now()}_${Math.random().toString(36).slice(2)}.jpg`;
