@@ -38,7 +38,6 @@ export default async function TeacherPage() {
         <div className="max-w-2xl mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <img src="/logo.png" alt="โลโก้" className="h-10 w-10 rounded-full object-cover border-2 border-brand-orange-300 shrink-0" />
-            </div>
             <div>
               <h1 className="font-semibold text-gray-800 leading-tight text-sm">
                 ระบบตรวจการเข้าเวร
