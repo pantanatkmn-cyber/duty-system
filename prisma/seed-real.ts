@@ -16,52 +16,51 @@ const prisma = new PrismaClient();
 // ===== รายชื่อครูทั้งหมด =====
 const TEACHERS = [
   // วันจันทร์
-  { username: "sudjai",       fullName: "อ.สุดใจ" },
-  { username: "pantanat",     fullName: "อ.ปัญธนัฐ" },
-  { username: "jaroon",       fullName: "อ.จรูญ" },
-  { username: "thanabat",     fullName: "อ.ธนบัตร" },
-  { username: "kiattisak",    fullName: "อ.เกียรติศักดิ์" },
-  { username: "uraiwan",      fullName: "อ.อุไรวรรณ" },
-  { username: "thanatthap",   fullName: "อ.ธนัตถ์ทรัพย์" },
-  { username: "weerapon",     fullName: "อ.วีระพล" },
+  { username: "sudjai",        fullName: "อ.สุดใจ" },
+  { username: "pantanat",      fullName: "อ.ปัญธนัฐ" },
+  { username: "jaroon",        fullName: "อ.จรูญ" },
+  { username: "thanabat",      fullName: "อ.ธนบัตร" },
+  { username: "kiattisak",     fullName: "อ.เกียรติศักดิ์" },
+  { username: "uraiwan",       fullName: "อ.อุไรวรรณ" },
+  { username: "thanatthap",    fullName: "อ.ธนัตถ์ทรัพย์" },
+  { username: "weerapon",      fullName: "อ.วีระพล" },
   // วันอังคาร
-  { username: "yaowalak",     fullName: "อ.เยาวลักษณ์" },
-  { username: "kriangkrai",   fullName: "อ.เกรียงไกร" },
-  { username: "suriyathep",   fullName: "อ.สุริยะเทพ" },
-  { username: "khaophong",    fullName: "อ.ขาวผ่อง" },
-  { username: "naree",        fullName: "อ.นารี" },
-  { username: "woraphon",     fullName: "อ.วรพล" },
-  { username: "latta",        fullName: "อ.ลัตตา" },
-  { username: "sarawut",      fullName: "อ.ศราวุธ" },
-  { username: "khetsamsak",   fullName: "อ.เขษมศักดิ์" },
+  { username: "yaowalak",      fullName: "อ.เยาวลักษณ์" },
+  { username: "kriangkrai",    fullName: "อ.เกรียงไกร" },
+  { username: "suriyathep",    fullName: "อ.สุริยะเทพ" },
+  { username: "khaophong",     fullName: "อ.ขาวผ่อง" },
+  { username: "naree",         fullName: "อ.นารี" },
+  { username: "woraphon",      fullName: "อ.วรพล" },
+  { username: "latta",         fullName: "อ.ลัตตา" },
+  { username: "sarawut",       fullName: "อ.ศราวุธ" },
+  { username: "khetsamsak",    fullName: "อ.เขษมศักดิ์" },
   // วันพุธ
-  { username: "watcharakorn", fullName: "อ.วัชรากร" },
-  { username: "koedphong",    fullName: "อ.เกิดพงศ์" },
-  { username: "krittamet",    fullName: "อ.กฤตเมธ" },
-  { username: "latda",        fullName: "อ.ลัตดา" },
-  { username: "chutimon",     fullName: "อ.ชุติมน" },
-  { username: "natthawan",    fullName: "อ.ณัฐวรรณ" },
-  { username: "noppakon",     fullName: "อ.นพกร" },
+  { username: "watcharakorn",  fullName: "อ.วัชรากร" },
+  { username: "koedphong",     fullName: "อ.เกิดพงศ์" },
+  { username: "krittamet",     fullName: "อ.กฤตเมธ" },
+  { username: "latda",         fullName: "อ.ลัตดา" },
+  { username: "chutimon",      fullName: "อ.ชุติมน" },
+  { username: "natthawan",     fullName: "อ.ณัฐวรรณ" },
+  { username: "noppakon",      fullName: "อ.นพกร" },
   // วันพฤหัสบดี
-  { username: "prayoon",      fullName: "อ.ประยูร" },
-  { username: "teerayut",     fullName: "อ.ธีรยุทธ" },
-  { username: "preeyaporn",   fullName: "อ.ปรียาพร" },
-  { username: "suwiyathep",   fullName: "อ.สุวิยะเทพ" },
-  { username: "arisa",        fullName: "อ.อาริสา" },
-  { username: "kansuphak",    fullName: "อ.กรรณสุภัค" },
+  { username: "prayoon",       fullName: "อ.ประยูร" },
+  { username: "teerayut",      fullName: "อ.ธีรยุทธ" },
+  { username: "preeyaporn",    fullName: "อ.ปรียาพร" },
+  { username: "suwiyathep",    fullName: "อ.สุวิยะเทพ" },
+  { username: "arisa",         fullName: "อ.อาริสา" },
+  { username: "kansuphak",     fullName: "อ.กรรณสุภัค" },
   // วันศุกร์
-  { username: "banjong",      fullName: "อ.บรรจง" },
-  { username: "phaskorn",     fullName: "อ.ภัสกร" },
-  { username: "silakrittinan",fullName: "อ.ศิลากฤตินันท์" },
-  { username: "naiyana",      fullName: "อ.นัยนา" },
-  { username: "wasinee",      fullName: "อ.วศินี" },
-  { username: "wiraphong",    fullName: "อ.วิรพงษ์" },
-  { username: "wichai",       fullName: "อ.วิชัย" },
-  { username: "monsit",       fullName: "อ.มนสิทธิ์" },
+  { username: "banjong",       fullName: "อ.บรรจง" },
+  { username: "phaskorn",      fullName: "อ.ภัสกร" },
+  { username: "silakrittinan", fullName: "อ.ศิลากฤตินันท์" },
+  { username: "naiyana",       fullName: "อ.นัยนา" },
+  { username: "wasinee",       fullName: "อ.วศินี" },
+  { username: "wiraphong",     fullName: "อ.วิรพงษ์" },
+  { username: "wichai",        fullName: "อ.วิชัย" },
+  { username: "monsit",        fullName: "อ.มนสิทธิ์" },
 ];
 
 // ===== ตารางเวรคาบรายสัปดาห์ (dayIndex: 0=จันทร์ … 4=ศุกร์) =====
-// หมายเหตุ: อ.วีระพล (Mon คาบ6) = อ.วีรพล (Fri คาบ3) → ใช้ username เดียวกัน
 const WEEKLY_SCHEDULE: { username: string; dutyCode: string; dayIndex: number }[] = [
   // ======== วันจันทร์ ========
   { username: "sudjai",       dutyCode: "PERIOD_1",     dayIndex: 0 },
@@ -118,8 +117,8 @@ const WEEKLY_SCHEDULE: { username: string; dutyCode: string; dayIndex: number }[
 // ===== คำนวณวันจันทร์ของสัปดาห์ปัจจุบัน =====
 function getMondayOfCurrentWeek(): Date {
   const now = new Date();
-  const day = now.getDay(); // 0=อาทิตย์, 1=จันทร์, ...
-  const diff = day === 0 ? -6 : 1 - day; // เลื่อนกลับไปจันทร์
+  const day = now.getDay();
+  const diff = day === 0 ? -6 : 1 - day;
   const monday = new Date(now);
   monday.setDate(now.getDate() + diff);
   monday.setHours(0, 0, 0, 0);
@@ -129,7 +128,6 @@ function getMondayOfCurrentWeek(): Date {
 async function main() {
   console.log("🌱 เริ่ม seed ข้อมูลครูจริง...\n");
 
-  // 1) สร้างครูทั้งหมด
   const passwordHash = await bcrypt.hash("password1234", 10);
   let createdCount = 0;
   let skippedCount = 0;
@@ -137,34 +135,20 @@ async function main() {
   for (const t of TEACHERS) {
     const result = await prisma.user.upsert({
       where: { username: t.username },
-      update: {}, // ไม่เขียนทับถ้ามีอยู่แล้ว
-      create: {
-        username: t.username,
-        passwordHash,
-        fullName: t.fullName,
-        role: "TEACHER",
-      },
+      update: {},
+      create: { username: t.username, passwordHash, fullName: t.fullName, role: "TEACHER" },
     });
-    // ตรวจว่าเพิ่งสร้างใหม่หรือมีอยู่แล้ว
     const isNew = result.createdAt.getTime() > Date.now() - 5000;
-    if (isNew) {
-      createdCount++;
-      console.log(`  ✅ สร้าง: ${t.fullName} (${t.username})`);
-    } else {
-      skippedCount++;
-    }
+    if (isNew) { createdCount++; console.log(`  ✅ สร้าง: ${t.fullName} (${t.username})`); }
+    else skippedCount++;
   }
   console.log(`\n👥 ครูใหม่ ${createdCount} คน | มีอยู่แล้ว ${skippedCount} คน`);
 
-  // 2) ดึง duty type ทั้งหมด
   const dutyTypes = await prisma.dutyType.findMany();
   const dutyTypeMap = new Map(dutyTypes.map((dt) => [dt.code, dt.id]));
-
-  // 3) ดึง user ทั้งหมด
   const users = await prisma.user.findMany({ select: { id: true, username: true } });
   const userMap = new Map(users.map((u) => [u.username, u.id]));
 
-  // 4) คำนวณวันในสัปดาห์นี้
   const monday = getMondayOfCurrentWeek();
   const weekDates = Array.from({ length: 5 }, (_, i) => {
     const d = new Date(monday);
@@ -174,11 +158,8 @@ async function main() {
 
   const dayNames = ["จันทร์", "อังคาร", "พุธ", "พฤหัสบดี", "ศุกร์"];
   console.log("\n📅 มอบหมายเวรสัปดาห์นี้:");
-  weekDates.forEach((d, i) => {
-    console.log(`  วัน${dayNames[i]}: ${d.toLocaleDateString("th-TH")}`);
-  });
+  weekDates.forEach((d, i) => console.log(`  วัน${dayNames[i]}: ${d.toLocaleDateString("th-TH")}`));
 
-  // 5) สร้าง assignments
   let assignCreated = 0;
   let assignSkipped = 0;
   const notFound: string[] = [];
@@ -187,16 +168,8 @@ async function main() {
     const userId = userMap.get(s.username);
     const dutyTypeId = dutyTypeMap.get(s.dutyCode);
     const dutyDate = weekDates[s.dayIndex];
-
-    if (!userId) {
-      notFound.push(`username "${s.username}" ไม่พบ`);
-      continue;
-    }
-    if (!dutyTypeId) {
-      notFound.push(`dutyCode "${s.dutyCode}" ไม่พบ`);
-      continue;
-    }
-
+    if (!userId) { notFound.push(`username "${s.username}"`); continue; }
+    if (!dutyTypeId) { notFound.push(`dutyCode "${s.dutyCode}"`); continue; }
     try {
       await prisma.dutyAssignment.upsert({
         where: { userId_dutyTypeId_dutyDate: { userId, dutyTypeId, dutyDate } },
@@ -204,23 +177,15 @@ async function main() {
         create: { userId, dutyTypeId, dutyDate },
       });
       assignCreated++;
-    } catch {
-      assignSkipped++;
-    }
+    } catch { assignSkipped++; }
   }
 
   console.log(`\n📋 เวร: สร้าง/มีอยู่แล้ว ${assignCreated} รายการ | ข้ามไป ${assignSkipped} รายการ`);
-  if (notFound.length > 0) {
-    console.log("⚠️  ไม่พบ:", notFound.join(", "));
-  }
-
+  if (notFound.length > 0) console.log("⚠️  ไม่พบ:", [...new Set(notFound)].join(", "));
   console.log("\n🎉 Seed ข้อมูลจริงเสร็จเรียบร้อย!");
-  console.log("🔑 รหัสผ่านครูทุกคน (ใหม่): password1234");
+  console.log("🔑 รหัสผ่านครูทุกคน: password1234");
 }
 
 main()
-  .catch((e) => {
-    console.error("❌ Seed ล้มเหลว:", e);
-    process.exit(1);
-  })
+  .catch((e) => { console.error("❌ Seed ล้มเหลว:", e); process.exit(1); })
   .finally(() => prisma.$disconnect());

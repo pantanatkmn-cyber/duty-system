@@ -108,7 +108,7 @@ model CheckIn {
   id           Int      @id @default(autoincrement())
   assignmentId Int      @unique
   checkInTime  DateTime @default(now())
-  photoPath    String
+  photoPath    String?  // null ได้หลังจากล้างรูปเก่า
   status       String   // EARLY / ON_TIME / LATE
   note         String?
   latitude     Float?
