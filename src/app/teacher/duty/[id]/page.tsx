@@ -133,7 +133,7 @@ export default async function DutyDetailPage({ params }: Props) {
               checkIn={ci ? {
                 id: ci.id,
                 checkInTime: ci.checkInTime.toISOString(),
-                photoPath: ci.photoPath,
+                photoPath: ci.photoPath ?? null,
                 status: ci.status,
                 note: ci.note ?? null,
               } : null}

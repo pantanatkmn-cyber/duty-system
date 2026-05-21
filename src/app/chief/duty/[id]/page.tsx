@@ -144,13 +144,19 @@ export default async function ChiefDutyDetailPage({ params, searchParams }: Prop
           <h3 className="text-sm font-semibold text-gray-500 mb-3">สถานะการเช็กอิน</h3>
           {ci ? (
             <div className="flex items-start gap-4">
-              <a href={ci.photoPath} target="_blank" rel="noopener noreferrer" className="shrink-0">
-                <img
-                  src={ci.photoPath}
-                  alt="รูปเช็กอิน"
-                  className="h-24 w-24 rounded-lg object-cover border border-gray-200 hover:opacity-80 transition"
-                />
-              </a>
+              {ci.photoPath ? (
+                <a href={ci.photoPath} target="_blank" rel="noopener noreferrer" className="shrink-0">
+                  <img
+                    src={ci.photoPath}
+                    alt="รูปเช็กอิน"
+                    className="h-24 w-24 rounded-lg object-cover border border-gray-200 hover:opacity-80 transition"
+                  />
+                </a>
+              ) : (
+                <div className="h-24 w-24 rounded-lg bg-gray-100 border border-gray-200 flex items-center justify-center shrink-0">
+                  <span className="text-xs text-gray-400">ไม่มีรูป</span>
+                </div>
+              )}
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-1">
                   <span className={`badge ${statusInfo.cls}`}>{statusInfo.label}</span>

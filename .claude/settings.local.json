@@ -11,7 +11,8 @@
       "Bash(mkdir -p \"D:\\\\duty-app\\\\duty-system-phase1\\\\duty-system\\\\src\\\\app\\\\api\\\\admin\\\\holidays\\\\[id]\")",
       "Bash(npx tsc *)",
       "Bash(git commit *)",
-      "Bash(git push *)"
+      "Bash(git push *)",
+      "Bash(git add *)"
     ]
   }
 }

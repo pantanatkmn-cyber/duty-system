@@ -6,7 +6,7 @@ import { CameraModal } from "@/app/teacher/camera-modal";
 interface CheckIn {
   id: number;
   checkInTime: string;
-  photoPath: string;
+  photoPath: string | null;
   status: string;
   note: string | null;
 }
@@ -43,14 +43,20 @@ export function CheckInSection({ assignmentId, dutyName, userName, startTime, en
       <div className="card">
         <h3 className="text-sm font-semibold text-gray-500 mb-3">สถานะการเช็กอิน</h3>
         <div className="flex items-start gap-4">
-          {/* รูปถ่าย */}
-          <a href={checkIn.photoPath} target="_blank" rel="noopener noreferrer" className="shrink-0">
-            <img
-              src={checkIn.photoPath}
-              alt="รูปเช็กอิน"
-              className="h-24 w-24 rounded-lg object-cover border border-gray-200 hover:opacity-80 transition"
-            />
-          </a>
+          {/* รูปถ่าย (อาจถูกล้างโดย cleanup job) */}
+          {checkIn.photoPath ? (
+            <a href={checkIn.photoPath} target="_blank" rel="noopener noreferrer" className="shrink-0">
+              <img
+                src={checkIn.photoPath}
+                alt="รูปเช็กอิน"
+                className="h-24 w-24 rounded-lg object-cover border border-gray-200 hover:opacity-80 transition"
+              />
+            </a>
+          ) : (
+            <div className="h-24 w-24 rounded-lg bg-gray-100 border border-gray-200 flex items-center justify-center shrink-0">
+              <span className="text-xs text-gray-400 text-center">ไม่มีรูป</span>
+            </div>
+          )}
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 mb-1">
               <span
