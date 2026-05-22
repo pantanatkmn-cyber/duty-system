@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { head } from "@vercel/blob";
+import { get } from "@vercel/blob";
 import { zipSync } from "fflate";
 
 // GET /api/chief/download-photos?date=YYYY-MM-DD
@@ -68,21 +68,27 @@ export async function GET(req: NextRequest) {
     return new NextResponse("ไม่มีรูปภาพในวันที่เลือก", { status: 404 });
   }
 
-  // ดาวน์โหลดรูปทั้งหมดพร้อมกัน โดยใช้ head() เพื่อรับ signed downloadUrl
+  // ดึงรูปทั้งหมดพร้อมกัน โดยใช้ get() จาก SDK (จัดการ auth กับ private store อัตโนมัติ)
   const fetched = await Promise.allSettled(
     entries.map(async (e) => {
-      let fetchUrl = e.url;
+      let data: Uint8Array;
 
-      // Vercel Blob private store (รวม .private. subdomain): ต้องใช้ head() เพื่อรับ signed URL ก่อน
-      if (e.url.includes(".blob.vercel-storage.com") || e.url.includes(".private.blob.vercel-storage.com")) {
-        const meta = await head(e.url);
-        fetchUrl = meta.downloadUrl;
+      if (e.url.includes(".blob.vercel-storage.com")) {
+        // private Vercel Blob — ใช้ SDK get()
+        const result = await get(e.url, { access: "private" });
+        if (!result || result.statusCode !== 200) {
+          throw new Error(`get() failed for: ${e.url}`);
+        }
+        const buf = await new Response(result.stream).arrayBuffer();
+        data = new Uint8Array(buf);
+      } else {
+        // local dev path
+        const res = await fetch(e.url);
+        if (!res.ok) throw new Error(`fetch failed: ${e.url}`);
+        data = new Uint8Array(await res.arrayBuffer());
       }
 
-      const res = await fetch(fetchUrl);
-      if (!res.ok) throw new Error(`fetch failed: ${e.url}`);
-      const buf = await res.arrayBuffer();
-      return { path: e.path, data: new Uint8Array(buf) };
+      return { path: e.path, data };
     })
   );
 
