@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { uploadPhoto } from "@/lib/upload";
+import { bangkokDutyTime } from "@/lib/thai-time";
 
 export async function POST(req: NextRequest) {
   const session = await getServerSession(authOptions);
@@ -56,16 +57,9 @@ export async function POST(req: NextRequest) {
   const graceMinutes = parseInt(graceSetting?.value ?? defaultGrace, 10);
 
   // คำนวณสถานะ: EARLY (ก่อนเวลา), ON_TIME (ตรงเวลา), LATE (สาย)
+  // ใช้ bangkokDutyTime เพื่อให้ถูกต้องทั้งบน Vercel (UTC) และ local (UTC+7)
   const now = new Date();
-  const [startHour, startMin] = assignment.dutyType.startTime.split(":").map(Number);
-  const dutyStart = new Date(
-    now.getFullYear(),
-    now.getMonth(),
-    now.getDate(),
-    startHour,
-    startMin,
-    0
-  );
+  const dutyStart = bangkokDutyTime(now, assignment.dutyType.startTime);
   const cutoff = new Date(dutyStart.getTime() + graceMinutes * 60 * 1000);
 
   let status: string;

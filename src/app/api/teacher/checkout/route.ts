@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { uploadPhoto } from "@/lib/upload";
+import { bangkokDutyTime } from "@/lib/thai-time";
 
 export async function POST(req: NextRequest) {
   const session = await getServerSession(authOptions);
@@ -38,14 +39,13 @@ export async function POST(req: NextRequest) {
   }
 
   // คำนวณสถานะออกเวรตามประเภทเวร
+  // ใช้ bangkokDutyTime เพื่อให้ถูกต้องทั้งบน Vercel (UTC) และ local (UTC+7)
   const now = new Date();
   const category = assignment.dutyType.category;
   let checkOutStatus: string;
 
   if (category === "PERIOD") {
-    // เวรคาบ: เทียบกับ endTime ของ dutyType + window 5 นาที
-    const [endHour, endMin] = assignment.dutyType.endTime.split(":").map(Number);
-    const dutyEnd = new Date(now.getFullYear(), now.getMonth(), now.getDate(), endHour, endMin, 0);
+    const dutyEnd = bangkokDutyTime(now, assignment.dutyType.endTime);
     const earlyWindow = new Date(dutyEnd.getTime() - 5 * 60 * 1000);
     if (now < earlyWindow) {
       checkOutStatus = "EARLY_OUT";
@@ -55,18 +55,14 @@ export async function POST(req: NextRequest) {
       checkOutStatus = "LATE_OUT";
     }
   } else if (category === "FRONT_GATE") {
-    // เวรประตูหน้า: ออกได้ตั้งแต่ front_gate_checkout_time (default 08:20)
     const s = await prisma.systemSetting.findUnique({ where: { key: "front_gate_checkout_time" } });
     const timeStr = s?.value ?? assignment.dutyType.endTime;
-    const [h, m] = timeStr.split(":").map(Number);
-    const readyAt = new Date(now.getFullYear(), now.getMonth(), now.getDate(), h, m, 0);
+    const readyAt = bangkokDutyTime(now, timeStr);
     checkOutStatus = now < readyAt ? "EARLY_OUT" : "ON_TIME_OUT";
   } else {
-    // POINT: ออกได้ตั้งแต่ point_checkout_time (default 16:30)
     const s = await prisma.systemSetting.findUnique({ where: { key: "point_checkout_time" } });
     const timeStr = s?.value ?? "16:30";
-    const [h, m] = timeStr.split(":").map(Number);
-    const readyAt = new Date(now.getFullYear(), now.getMonth(), now.getDate(), h, m, 0);
+    const readyAt = bangkokDutyTime(now, timeStr);
     checkOutStatus = now < readyAt ? "EARLY_OUT" : "ON_TIME_OUT";
   }
 

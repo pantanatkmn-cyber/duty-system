@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { PrintControls } from "./print-controls";
+import { formatThaiTime } from "@/lib/thai-time";
 
 // ===== ค่าคงที่ =====
 const CATEGORY_LABEL: Record<string, string> = {
@@ -26,10 +27,6 @@ function formatThaiDate(dateStr: string): string {
   return `วัน${THAI_DAYS[d.getDay()]}ที่ ${day} ${THAI_MONTHS[month - 1]} พ.ศ. ${year + 543}`;
 }
 
-function formatTime(iso: string): string {
-  const d = new Date(iso);
-  return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")} น.`;
-}
 
 function getCheckInStatus(status: string | null | undefined): { text: string; color: string } {
   if (!status) return { text: "ขาด", color: "#b91c1c" };
@@ -128,7 +125,7 @@ export default async function PrintPage({ searchParams }: Props) {
   }));
 
   const thaiDate = formatThaiDate(dateStr);
-  const printedAt = formatTime(now.toISOString());
+  const printedAt = formatThaiTime(now.toISOString());
 
   return (
     <>
@@ -210,13 +207,13 @@ export default async function PrintPage({ searchParams }: Props) {
                           <span className="text-gray-400 ml-1">({a.dutyType.startTime}–{a.dutyType.endTime})</span>
                         </td>
                         <td className="border-b border-r border-gray-300 px-2 py-1 text-center">
-                          {a.checkIn ? formatTime(a.checkIn.checkInTime.toISOString()) : "—"}
+                          {a.checkIn ? formatThaiTime(a.checkIn.checkInTime.toISOString()) : "—"}
                         </td>
                                         <td className="border-b border-r border-gray-300 px-2 py-1 text-center font-semibold" style={{ color: ciStatus.color }}>
                           {ciStatus.text}
                         </td>
                         <td className="border-b border-r border-gray-300 px-2 py-1 text-center">
-                          {a.checkIn?.checkOutTime ? formatTime(a.checkIn.checkOutTime.toISOString()) : "—"}
+                          {a.checkIn?.checkOutTime ? formatThaiTime(a.checkIn.checkOutTime.toISOString()) : "—"}
                         </td>
                         <td className="border-b border-r border-gray-300 px-2 py-1 text-center font-semibold" style={{ color: coStatus.color }}>
                           {coStatus.text}
@@ -268,7 +265,7 @@ export default async function PrintPage({ searchParams }: Props) {
                       <td className="border border-gray-300 px-2 py-1">{inc.teacherName}</td>
                       <td className="border border-gray-300 px-2 py-1">{inc.incidentType}</td>
                       <td className="border border-gray-300 px-2 py-1 text-gray-600">{inc.description || "—"}</td>
-                      <td className="border border-gray-300 px-2 py-1 text-center">{formatTime(inc.reportedAt.toISOString())}</td>
+                      <td className="border border-gray-300 px-2 py-1 text-center">{formatThaiTime(inc.reportedAt.toISOString())}</td>
                     </tr>
                   ))}
                 </tbody>

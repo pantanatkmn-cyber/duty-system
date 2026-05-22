@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { LogoutButton } from "@/app/dashboard/logout-button";
 import Link from "next/link";
 import { blobPhotoUrl } from "@/lib/photo-url";
+import { formatThaiTime } from "@/lib/thai-time";
 
 const CATEGORY_ICON: Record<string, string> = {
   FRONT_GATE: "🏫",
@@ -27,10 +28,6 @@ const INCIDENT_ICONS: Record<string, string> = {
   "พบบุหรี่/อื่นๆ": "🚬",
 };
 
-function formatTime(iso: string) {
-  const d = new Date(iso);
-  return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")} น.`;
-}
 
 interface Props {
   params: { id: string };
@@ -164,7 +161,7 @@ export default async function ChiefDutyDetailPage({ params, searchParams }: Prop
                   <span className={`badge ${statusInfo.cls}`}>{statusInfo.label}</span>
                 </div>
                 <p className="text-sm text-gray-600">
-                  เช็กอินเมื่อ <span className="font-medium">{formatTime(ci.checkInTime.toISOString())}</span>
+                  เช็กอินเมื่อ <span className="font-medium">{formatThaiTime(ci.checkInTime.toISOString())}</span>
                 </p>
                 {ci.note && (
                   <p className="text-xs text-gray-500 mt-1 bg-gray-50 rounded px-2 py-1">
@@ -200,7 +197,7 @@ export default async function ChiefDutyDetailPage({ params, searchParams }: Prop
                   <span className={`badge ${checkoutStatusInfo.cls} mb-1`}>{checkoutStatusInfo.label}</span>
                 )}
                 <p className="text-sm text-gray-600 mt-1">
-                  ออกเวรเมื่อ <span className="font-medium">{formatTime(ci.checkOutTime.toISOString())}</span>
+                  ออกเวรเมื่อ <span className="font-medium">{formatThaiTime(ci.checkOutTime.toISOString())}</span>
                 </p>
                 {ci.checkOutPhoto && (
                   <p className="text-xs text-gray-400 mt-1">คลิกที่รูปเพื่อดูขนาดเต็ม</p>
@@ -244,7 +241,7 @@ export default async function ChiefDutyDetailPage({ params, searchParams }: Prop
                       {inc.description && (
                         <p className="text-sm text-gray-600 mt-0.5">{inc.description}</p>
                       )}
-                      <p className="text-xs text-gray-400 mt-1">รายงานเมื่อ {formatTime(inc.reportedAt.toISOString())}</p>
+                      <p className="text-xs text-gray-400 mt-1">รายงานเมื่อ {formatThaiTime(inc.reportedAt.toISOString())}</p>
                     </div>
                   </div>
                   {inc.photos.length > 0 && (

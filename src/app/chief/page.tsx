@@ -9,6 +9,7 @@ import { PrintButton } from "./print-button";
 import { blobPhotoUrl } from "@/lib/photo-url";
 import { DownloadPhotosButton } from "./download-photos-button";
 import { ExemptButton } from "./exempt-button";
+import { formatThaiTime } from "@/lib/thai-time";
 
 // ===== ค่าคงที่ =====
 const CATEGORY_LABEL: Record<string, string> = {
@@ -39,10 +40,6 @@ function formatThaiDate(dateStr: string): string {
   return `วัน${THAI_DAYS[d.getDay()]}ที่ ${day} ${THAI_MONTHS[month - 1]} พ.ศ. ${year + 543}`;
 }
 
-function formatTime(iso: string): string {
-  const d = new Date(iso);
-  return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")} น.`;
-}
 
 function getStatusInfo(checkIn: { status: string } | null) {
   if (!checkIn) return { label: "ยังไม่เช็กอิน", cls: "badge-danger" };
@@ -287,7 +284,7 @@ export default async function ChiefPage({ searchParams }: Props) {
                           <div className="flex items-center gap-2 shrink-0 flex-wrap justify-end">
                             {a.checkIn && (
                               <span className="text-xs text-gray-500">
-                                {formatTime(a.checkIn.checkInTime.toISOString())}
+                                {formatThaiTime(a.checkIn.checkInTime.toISOString())}
                               </span>
                             )}
                             {!a.exempted && (
@@ -347,7 +344,7 @@ export default async function ChiefPage({ searchParams }: Props) {
                             <p className="text-sm text-gray-700 mt-0.5">{inc.description}</p>
                           )}
                           <p className="text-xs text-gray-400 mt-1">
-                            รายงานเมื่อ {formatTime(inc.reportedAt.toISOString())}
+                            รายงานเมื่อ {formatThaiTime(inc.reportedAt.toISOString())}
                           </p>
                         </div>
                       </div>
