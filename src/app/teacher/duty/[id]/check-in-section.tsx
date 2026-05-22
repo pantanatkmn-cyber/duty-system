@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { CameraModal } from "@/app/teacher/camera-modal";
 import { blobPhotoUrl } from "@/lib/photo-url";
+import { formatThaiTime } from "@/lib/thai-time";
 
 interface CheckIn {
   id: number;
@@ -21,12 +22,6 @@ interface Props {
   checkIn: CheckIn | null;
 }
 
-function formatThaiTime(iso: string) {
-  const d = new Date(iso);
-  const hh = String(d.getHours()).padStart(2, "0");
-  const mm = String(d.getMinutes()).padStart(2, "0");
-  return `${hh}:${mm} น.`;
-}
 
 function isAbsent(endTime: string): boolean {
   const now = new Date();

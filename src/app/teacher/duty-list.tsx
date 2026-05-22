@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import { CameraModal } from "./camera-modal";
+import { formatThaiTime } from "@/lib/thai-time";
 
 interface DutyType {
   id: number;
@@ -44,12 +45,6 @@ const CATEGORY_LABEL: Record<string, string> = {
   PERIOD: "เวรคาบ",
 };
 
-function formatThaiTime(isoString: string) {
-  const d = new Date(isoString);
-  const hh = String(d.getHours()).padStart(2, "0");
-  const mm = String(d.getMinutes()).padStart(2, "0");
-  return `${hh}:${mm} น.`;
-}
 
 export function DutyList({ assignments, userName }: Props) {
   const [activeAssignmentId, setActiveAssignmentId] = useState<number | null>(null);

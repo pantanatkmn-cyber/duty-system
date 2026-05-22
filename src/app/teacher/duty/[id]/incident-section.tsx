@@ -3,6 +3,7 @@
 import { useRef, useState, useEffect } from "react";
 import { blobPhotoUrl } from "@/lib/photo-url";
 import { useRouter } from "next/navigation";
+import { formatThaiTime } from "@/lib/thai-time";
 
 // ===== ประเภทเหตุการณ์ =====
 const INCIDENT_TYPES = [
@@ -247,10 +248,6 @@ export function IncidentSection({ assignmentId, initialIncidents }: Props) {
     }
   }
 
-  function formatTime(iso: string) {
-    const d = new Date(iso);
-    return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")} น.`;
-  }
 
   return (
     <div className="card">
@@ -283,7 +280,7 @@ export function IncidentSection({ assignmentId, initialIncidents }: Props) {
                 {inc.description && (
                   <p className="text-sm text-gray-600 mt-0.5">{inc.description}</p>
                 )}
-                <p className="text-xs text-gray-400 mt-1">รายงานเมื่อ {formatTime(inc.reportedAt)}</p>
+                <p className="text-xs text-gray-400 mt-1">รายงานเมื่อ {formatThaiTime(inc.reportedAt)}</p>
               </div>
             </div>
             {/* รูปภาพประกอบ */}

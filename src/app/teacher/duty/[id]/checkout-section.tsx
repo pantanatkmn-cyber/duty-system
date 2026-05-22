@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { CheckoutModal } from "./checkout-modal";
 import { blobPhotoUrl } from "@/lib/photo-url";
+import { formatThaiTime } from "@/lib/thai-time";
 
 interface CheckOutData {
   checkOutTime: string;
@@ -32,10 +33,6 @@ const STATUS_BADGE: Record<string, string> = {
   LATE_OUT:    "badge-warning",
 };
 
-function formatTime(iso: string) {
-  const d = new Date(iso);
-  return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")} น.`;
-}
 
 function isForgotCheckout(endTime: string): boolean {
   const now = new Date();
@@ -70,7 +67,7 @@ export function CheckoutSection({
               {STATUS_LABEL[checkOut.checkOutStatus] ?? checkOut.checkOutStatus}
             </span>
             <p className="text-sm text-gray-600 mt-1">
-              ออกเวรเมื่อ <span className="font-medium">{formatTime(checkOut.checkOutTime)}</span>
+              ออกเวรเมื่อ <span className="font-medium">{formatThaiTime(checkOut.checkOutTime)}</span>
             </p>
             <p className="text-xs text-gray-400 mt-1">คลิกที่รูปเพื่อดูขนาดเต็ม</p>
           </div>
