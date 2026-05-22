@@ -13,6 +13,7 @@ export interface AllSettings {
   point_forgot_time: string;
   // เวรคาบ
   period_grace_minutes: number;
+  period_forgot_time: string;
 }
 
 interface Props { settings: AllSettings }
@@ -36,7 +37,7 @@ const CATEGORY_SECTIONS = [
     key: "period" as const,
     label: "เวรคาบ",
     icon: "📚",
-    note: "เวลาออกเวรและลืมออกเวรใช้เวลาสิ้นสุดของแต่ละคาบอัตโนมัติ",
+    note: "เวลาออกเวรใช้เวลาสิ้นสุดของแต่ละคาบ · ตั้งเวลาลืมออกเวรได้",
     hasCheckout: false,
   },
 ];
@@ -145,31 +146,39 @@ export function SettingsForm({ settings }: Props) {
                 </div>
               )}
 
-              {/* เวลาลืมออกเวร */}
-              {sec.hasCheckout ? (
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    ⚠️ ขึ้น "ลืมออกเวร" หลัง
-                  </label>
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="time"
-                      value={vals[forgotKey] as string}
-                      onChange={(e) => set(forgotKey, e.target.value)}
-                      className="form-input text-sm w-36 font-bold"
-                    />
-                    <span className="text-sm text-gray-500">น.</span>
-                  </div>
-                  <p className="text-xs text-gray-400 mt-1">ถ้าไม่กดออกเวรภายในเวลานี้</p>
-                </div>
-              ) : (
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    ⚠️ ขึ้น "ลืมออกเวร" หลัง
-                  </label>
-                  <p className="text-sm text-gray-400 mt-2">ใช้เวลาสิ้นสุดคาบอัตโนมัติ</p>
-                </div>
-              )}
+              {/* เวลาลืมออกเวร — FRONT_GATE/POINT ใช้ input, PERIOD ใช้ input เช่นกัน */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  ⚠️ ขึ้น "ลืมออกเวร" หลัง
+                </label>
+                {sec.hasCheckout ? (
+                  <>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="time"
+                        value={vals[forgotKey] as string}
+                        onChange={(e) => set(forgotKey, e.target.value)}
+                        className="form-input text-sm w-36 font-bold"
+                      />
+                      <span className="text-sm text-gray-500">น.</span>
+                    </div>
+                    <p className="text-xs text-gray-400 mt-1">ถ้าไม่กดออกเวรภายในเวลานี้</p>
+                  </>
+                ) : (
+                  <>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="time"
+                        value={(vals as Record<string, string | number>)["period_forgot_time"] as string}
+                        onChange={(e) => set("period_forgot_time" as keyof AllSettings, e.target.value)}
+                        className="form-input text-sm w-36 font-bold"
+                      />
+                      <span className="text-sm text-gray-500">น.</span>
+                    </div>
+                    <p className="text-xs text-gray-400 mt-1">หากไม่ตั้งค่า จะใช้เวลาสิ้นสุดของแต่ละคาบ</p>
+                  </>
+                )}
+              </div>
             </div>
           </div>
         );

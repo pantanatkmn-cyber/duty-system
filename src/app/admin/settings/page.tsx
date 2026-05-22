@@ -12,6 +12,7 @@ const DEFAULTS: AllSettings = {
   point_checkout_time: "16:30",
   point_forgot_time: "17:30",
   period_grace_minutes: 5,
+  period_forgot_time: "17:30",
 };
 
 export default async function SettingsPage() {
@@ -34,6 +35,7 @@ export default async function SettingsPage() {
     point_checkout_time:      map["point_checkout_time"] ?? map["school_end_time"] ?? DEFAULTS.point_checkout_time,
     point_forgot_time:        map["point_forgot_time"] ?? map["school_forgot_checkout_time"] ?? DEFAULTS.point_forgot_time,
     period_grace_minutes:     parseInt(map["period_grace_minutes"] ?? map["grace_period_minutes"] ?? String(DEFAULTS.period_grace_minutes)),
+    period_forgot_time:       map["period_forgot_time"] ?? DEFAULTS.period_forgot_time,
   };
 
   return (
