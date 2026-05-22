@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/admin-auth";
 
+// บอก Vercel ให้รอได้สูงสุด 60 วินาที (default คือ 10 วินาที)
+export const maxDuration = 60;
+
 export async function POST(req: NextRequest) {
   const { error } = await requireAdmin();
   if (error) return error;
@@ -27,37 +30,20 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "ไม่มีเวรในวันที่เลือก" }, { status: 400 });
   }
 
-  let created = 0;
-  let skipped = 0;
-
-  // สร้างเวรใน N สัปดาห์ถัดไป (เพิ่มทีละ 7 วัน)
+  // สร้าง records ทั้งหมดในคราวเดียว แทนที่จะ upsert ทีละรายการ
+  const allRecords = [];
   for (let w = 1; w <= weeks; w++) {
     const targetDate = new Date(sourceDate);
     targetDate.setDate(sourceDate.getDate() + w * 7);
-
     for (const a of sourceAssignments) {
-      try {
-        await prisma.dutyAssignment.upsert({
-          where: {
-            userId_dutyTypeId_dutyDate: {
-              userId: a.userId,
-              dutyTypeId: a.dutyTypeId,
-              dutyDate: targetDate,
-            },
-          },
-          update: {}, // ถ้ามีอยู่แล้วไม่เปลี่ยน
-          create: {
-            userId: a.userId,
-            dutyTypeId: a.dutyTypeId,
-            dutyDate: targetDate,
-          },
-        });
-        created++;
-      } catch {
-        skipped++;
-      }
+      allRecords.push({ userId: a.userId, dutyTypeId: a.dutyTypeId, dutyDate: targetDate });
     }
   }
 
-  return NextResponse.json({ success: true, created, skipped, weeks });
+  const result = await prisma.dutyAssignment.createMany({
+    data: allRecords,
+    skipDuplicates: true, // ถ้ามีอยู่แล้วข้ามไป
+  });
+
+  return NextResponse.json({ success: true, created: result.count, skipped: allRecords.length - result.count, weeks });
 }
