@@ -169,8 +169,8 @@ export function SettingsForm({ settings }: Props) {
                     <div className="flex items-center gap-2">
                       <input
                         type="time"
-                        value={(vals as Record<string, string | number>)["period_forgot_time"] as string}
-                        onChange={(e) => set("period_forgot_time" as keyof AllSettings, e.target.value)}
+                        value={vals.period_forgot_time}
+                        onChange={(e) => set("period_forgot_time", e.target.value)}
                         className="form-input text-sm w-36 font-bold"
                       />
                       <span className="text-sm text-gray-500">น.</span>
