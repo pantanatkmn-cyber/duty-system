@@ -65,9 +65,15 @@ export default async function DutyDetailPage({ params }: Props) {
   let checkoutDeadlineTime = assignment.dutyType.endTime;
 
   if (category === "PERIOD") {
-    // PERIOD: checkoutReady = endTime, forgot = period_forgot_time ถ้าตั้งไว้
-    const forgotSetting = await prisma.systemSetting.findUnique({ where: { key: "period_forgot_time" } });
-    if (forgotSetting?.value) checkoutDeadlineTime = forgotSetting.value;
+    // PERIOD: checkoutDeadline = endTime + period_forgot_extra_minutes
+    const extraSetting = await prisma.systemSetting.findUnique({ where: { key: "period_forgot_extra_minutes" } });
+    const extraMins = parseInt(extraSetting?.value ?? "15", 10);
+    if (extraMins > 0) {
+      const [h, m] = assignment.dutyType.endTime.split(":").map(Number);
+      const total = h * 60 + m + extraMins;
+      checkoutDeadlineTime = `${String(Math.floor(total / 60)).padStart(2,"0")}:${String(total % 60).padStart(2,"0")}`;
+    }
+    // extraMins = 0 → ใช้ endTime เดิม (ค่า default)
   } else {
     const checkoutKey = category === "FRONT_GATE" ? "front_gate_checkout_time" : "point_checkout_time";
     const forgotKey   = category === "FRONT_GATE" ? "front_gate_forgot_time"   : "point_forgot_time";

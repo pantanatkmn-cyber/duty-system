@@ -13,7 +13,7 @@ export interface AllSettings {
   point_forgot_time: string;
   // เวรคาบ
   period_grace_minutes: number;
-  period_forgot_time: string;
+  period_forgot_extra_minutes: number; // บวกเพิ่มจาก endTime ของแต่ละคาบ
 }
 
 interface Props { settings: AllSettings }
@@ -167,15 +167,22 @@ export function SettingsForm({ settings }: Props) {
                 ) : (
                   <>
                     <div className="flex items-center gap-2">
+                      <span className="text-sm text-gray-500">สิ้นสุดเวร +</span>
                       <input
-                        type="time"
-                        value={vals.period_forgot_time}
-                        onChange={(e) => set("period_forgot_time", e.target.value)}
-                        className="form-input text-sm w-36 font-bold"
+                        type="number"
+                        min={0}
+                        max={120}
+                        value={vals.period_forgot_extra_minutes}
+                        onChange={(e) => set("period_forgot_extra_minutes", parseInt(e.target.value) || 0)}
+                        className="form-input text-sm w-20 text-center font-bold"
                       />
-                      <span className="text-sm text-gray-500">น.</span>
+                      <span className="text-sm text-gray-500">นาที</span>
                     </div>
-                    <p className="text-xs text-gray-400 mt-1">หากไม่ตั้งค่า จะใช้เวลาสิ้นสุดของแต่ละคาบ</p>
+                    <p className="text-xs text-gray-400 mt-1">
+                      {vals.period_forgot_extra_minutes === 0
+                        ? "ขึ้นทันทีเมื่อเลยเวลาสิ้นสุดเวร"
+                        : `เช่น คาบที่สิ้นสุด 10:10 → ขึ้นลืมออกเวรหลัง 10:${String(10 + vals.period_forgot_extra_minutes).padStart(2,"0")}`}
+                    </p>
                   </>
                 )}
               </div>
