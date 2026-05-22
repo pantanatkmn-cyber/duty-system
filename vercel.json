@@ -4,8 +4,5 @@
       "path": "/api/cron/cleanup",
       "schedule": "0 2 * * 1"
     }
-  ],
-  "env": {
-    "TZ": "Asia/Bangkok"
-  }
+  ]
 }
