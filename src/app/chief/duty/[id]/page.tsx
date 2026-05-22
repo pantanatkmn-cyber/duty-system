@@ -4,7 +4,7 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { LogoutButton } from "@/app/dashboard/logout-button";
 import Link from "next/link";
-import { resolvePhotoUrl } from "@/lib/photo-url";
+import { blobPhotoUrl } from "@/lib/photo-url";
 
 const CATEGORY_ICON: Record<string, string> = {
   FRONT_GATE: "🏫",
@@ -74,19 +74,6 @@ export default async function ChiefDutyDetailPage({ params, searchParams }: Prop
   const backDate = searchParams.from ?? "";
   const backUrl = backDate ? `/chief?date=${backDate}` : "/chief";
 
-  // resolve photo URLs ทั้งหมดบน server ก่อน render
-  let photoIdx2 = 0;
-  const [ciPhoto, ciCheckOutPhoto, incPhotos2] = await Promise.all([
-    resolvePhotoUrl(ci?.photoPath),
-    resolvePhotoUrl(ci?.checkOutPhoto),
-    Promise.all(
-      assignment.incidents.flatMap((inc) => inc.photos.map((p) => resolvePhotoUrl(p.photoPath)))
-    ),
-  ]);
-  const resolvedAssignmentIncidents = assignment.incidents.map((inc) => ({
-    ...inc,
-    photos: inc.photos.map((p) => ({ ...p, photoPath: incPhotos2[photoIdx2++] ?? p.photoPath })),
-  }));
 
   // สถานะเช็กอิน
   const statusInfo = !ci
@@ -159,10 +146,10 @@ export default async function ChiefDutyDetailPage({ params, searchParams }: Prop
           <h3 className="text-sm font-semibold text-gray-500 mb-3">สถานะการเช็กอิน</h3>
           {ci ? (
             <div className="flex items-start gap-4">
-              {ciPhoto ? (
-                <a href={ciPhoto} target="_blank" rel="noopener noreferrer" className="shrink-0">
+              {ci.photoPath ? (
+                <a href={blobPhotoUrl(ci.photoPath) ?? "#"} target="_blank" rel="noopener noreferrer" className="shrink-0">
                   <img
-                    src={ciPhoto}
+                    src={blobPhotoUrl(ci.photoPath) ?? ""}
                     alt="รูปเช็กอิน"
                     className="h-24 w-24 rounded-lg object-cover border border-gray-200 hover:opacity-80 transition"
                   />
@@ -199,10 +186,10 @@ export default async function ChiefDutyDetailPage({ params, searchParams }: Prop
           <div className="card">
             <h3 className="text-sm font-semibold text-gray-500 mb-3">สถานะการออกเวร</h3>
             <div className="flex items-start gap-4">
-              {ciCheckOutPhoto && (
-                <a href={ciCheckOutPhoto} target="_blank" rel="noopener noreferrer" className="shrink-0">
+              {ci.checkOutPhoto && (
+                <a href={blobPhotoUrl(ci.checkOutPhoto) ?? "#"} target="_blank" rel="noopener noreferrer" className="shrink-0">
                   <img
-                    src={ciCheckOutPhoto}
+                    src={blobPhotoUrl(ci.checkOutPhoto) ?? ""}
                     alt="รูปออกเวร"
                     className="h-24 w-24 rounded-lg object-cover border border-gray-200 hover:opacity-80 transition"
                   />
@@ -248,7 +235,7 @@ export default async function ChiefDutyDetailPage({ params, searchParams }: Prop
             <p className="text-sm text-gray-400 text-center py-4">ไม่มีรายงานเหตุการณ์</p>
           ) : (
             <div className="space-y-3">
-              {resolvedAssignmentIncidents.map((inc) => (
+              {assignment.incidents.map((inc) => (
                 <div key={inc.id} className="rounded-xl border border-yellow-100 bg-yellow-50 p-3">
                   <div className="flex items-start gap-2">
                     <span className="text-xl shrink-0">{INCIDENT_ICONS[inc.incidentType] ?? "📋"}</span>
@@ -263,9 +250,9 @@ export default async function ChiefDutyDetailPage({ params, searchParams }: Prop
                   {inc.photos.length > 0 && (
                     <div className="flex flex-wrap gap-2 mt-2 ml-8">
                       {inc.photos.map((p) => (
-                        <a key={p.id} href={p.photoPath} target="_blank" rel="noopener noreferrer">
+                        <a key={p.id} href={blobPhotoUrl(p.photoPath) ?? "#"} target="_blank" rel="noopener noreferrer">
                           <img
-                            src={p.photoPath}
+                            src={blobPhotoUrl(p.photoPath) ?? ""}
                             alt="รูปเหตุการณ์"
                             className="h-16 w-16 rounded-lg object-cover border border-yellow-200 hover:opacity-80 transition"
                           />

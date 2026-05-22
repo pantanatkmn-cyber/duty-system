@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { CameraModal } from "@/app/teacher/camera-modal";
+import { blobPhotoUrl } from "@/lib/photo-url";
 
 interface CheckIn {
   id: number;
@@ -45,9 +46,9 @@ export function CheckInSection({ assignmentId, dutyName, userName, startTime, en
         <div className="flex items-start gap-4">
           {/* รูปถ่าย (อาจถูกล้างโดย cleanup job) */}
           {checkIn.photoPath ? (
-            <a href={checkIn.photoPath} target="_blank" rel="noopener noreferrer" className="shrink-0">
+            <a href={blobPhotoUrl(checkIn.photoPath) ?? "#"} target="_blank" rel="noopener noreferrer" className="shrink-0">
               <img
-                src={checkIn.photoPath}
+                src={blobPhotoUrl(checkIn.photoPath) ?? ""}
                 alt="รูปเช็กอิน"
                 className="h-24 w-24 rounded-lg object-cover border border-gray-200 hover:opacity-80 transition"
               />

@@ -1,10 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
-import { head } from "@vercel/blob";
 
 // GET /api/photo?url=<blob_url>
-// ตรวจสิทธิ์แล้ว redirect ไปที่ signed downloadUrl ของ Vercel Blob private
+// ตรวจสิทธิ์ login แล้วดึงรูปจาก private Vercel Blob ส่งกลับให้ browser
 export async function GET(req: NextRequest) {
   const session = await getServerSession(authOptions);
   if (!session) {
@@ -13,7 +12,7 @@ export async function GET(req: NextRequest) {
 
   const blobUrl = req.nextUrl.searchParams.get("url");
   if (!blobUrl) {
-    return new NextResponse("Missing url parameter", { status: 400 });
+    return new NextResponse("Missing url", { status: 400 });
   }
 
   // ป้องกัน SSRF — อนุญาตเฉพาะ Vercel Blob URL (รวม .private. subdomain)
@@ -21,14 +20,29 @@ export async function GET(req: NextRequest) {
     return new NextResponse("Invalid URL", { status: 400 });
   }
 
+  const token = process.env.BLOB_READ_WRITE_TOKEN;
+
   try {
-    const blobMeta = await head(blobUrl);
-    // redirect ไปที่ signed URL แทนการ proxy เนื้อหา
-    return NextResponse.redirect(blobMeta.downloadUrl, 302);
+    // ดึงรูปจาก private blob ด้วย Bearer token (Vercel รองรับวิธีนี้)
+    const response = await fetch(blobUrl, {
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+    });
+
+    if (!response.ok) {
+      console.error(`Blob fetch failed: ${response.status} ${response.statusText} — ${blobUrl}`);
+      return new NextResponse(`Blob fetch failed: ${response.status}`, { status: response.status });
+    }
+
+    const buffer = await response.arrayBuffer();
+    return new NextResponse(buffer, {
+      headers: {
+        "Content-Type": response.headers.get("Content-Type") ?? "image/jpeg",
+        "Cache-Control": "private, max-age=3600",
+      },
+    });
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
     console.error("Photo proxy error:", msg);
-    // ส่ง error จริงกลับเพื่อ debug
-    return new NextResponse(`head() failed: ${msg}`, { status: 500 });
+    return new NextResponse(`Error: ${msg}`, { status: 500 });
   }
 }
