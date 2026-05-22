@@ -57,16 +57,19 @@ function IncidentCameraPanel({
   const streamRef = useRef<MediaStream | null>(null);
   const [ready, setReady] = useState(false);
   const [error, setError] = useState("");
+  const [facingMode, setFacingMode] = useState<"environment" | "user">("environment");
 
   useEffect(() => {
-    open();
+    open("environment");
     return () => stop();
   }, []);
 
-  async function open() {
+  async function open(mode: "environment" | "user") {
+    stop();
+    setReady(false);
     try {
       const s = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: { ideal: "environment" }, width: { ideal: 1280 }, height: { ideal: 720 } },
+        video: { facingMode: { ideal: mode }, width: { ideal: 1280 }, height: { ideal: 720 } },
         audio: false,
       });
       streamRef.current = s;
@@ -82,6 +85,12 @@ function IncidentCameraPanel({
   function stop() {
     streamRef.current?.getTracks().forEach((t) => t.stop());
     streamRef.current = null;
+  }
+
+  function flip() {
+    const next = facingMode === "environment" ? "user" : "environment";
+    setFacingMode(next);
+    open(next);
   }
 
   function capture() {
@@ -135,6 +144,16 @@ function IncidentCameraPanel({
         <>
           <div style={{ aspectRatio: "16/9" }} className="relative">
             <video ref={videoRef} autoPlay playsInline muted className="w-full h-full object-cover" />
+            {/* ปุ่มกลับกล้อง */}
+            <button
+              onClick={flip}
+              className="absolute top-2 right-2 bg-black/50 hover:bg-black/70 text-white rounded-full p-2 transition"
+              title="กลับกล้อง"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+              </svg>
+            </button>
           </div>
           <canvas ref={canvasRef} className="hidden" />
           <div className="flex gap-2 p-2 bg-gray-900">

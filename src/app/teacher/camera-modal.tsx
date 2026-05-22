@@ -40,6 +40,7 @@ export function CameraModal({ assignmentId, dutyName, userName, startTime, onClo
   const [earlyReason, setEarlyReason] = useState("");
   const [errorMsg, setErrorMsg] = useState("");
   const [checkInStatus, setCheckInStatus] = useState<"ON_TIME" | "LATE" | "EARLY" | null>(null);
+  const [facingMode, setFacingMode] = useState<"environment" | "user">("environment");
 
   // คำนวณว่าเข้าก่อนเวลาหรือไม่ โดยเทียบ captureTime กับ startTime
   const isEarly = (() => {
@@ -52,24 +53,19 @@ export function CameraModal({ assignmentId, dutyName, userName, startTime, onClo
   const router = useRouter();
 
   useEffect(() => {
-    openCamera();
+    openCamera("environment");
     return () => stopCamera();
   }, []);
 
-  async function openCamera() {
+  async function openCamera(mode: "environment" | "user") {
+    stopCamera();
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
-        video: {
-          facingMode: { ideal: "environment" }, // กล้องหลังบนมือถือ
-          width: { ideal: 1280 },
-          height: { ideal: 720 },
-        },
+        video: { facingMode: { ideal: mode }, width: { ideal: 1280 }, height: { ideal: 720 } },
         audio: false,
       });
       streamRef.current = stream;
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-      }
+      if (videoRef.current) videoRef.current.srcObject = stream;
     } catch {
       setPhase("error");
       setErrorMsg("ไม่สามารถเปิดกล้องได้ กรุณาอนุญาตการเข้าถึงกล้องในเบราว์เซอร์");
@@ -79,6 +75,12 @@ export function CameraModal({ assignmentId, dutyName, userName, startTime, onClo
   function stopCamera() {
     streamRef.current?.getTracks().forEach((t) => t.stop());
     streamRef.current = null;
+  }
+
+  function flipCamera() {
+    const next = facingMode === "environment" ? "user" : "environment";
+    setFacingMode(next);
+    openCamera(next);
   }
 
   function captureAndStamp() {
@@ -179,7 +181,7 @@ export function CameraModal({ assignmentId, dutyName, userName, startTime, onClo
     setCaptureTime(null);
     setEarlyReason("");
     setPhase("camera");
-    openCamera();
+    openCamera(facingMode);
   }
 
   return (
@@ -203,13 +205,17 @@ export function CameraModal({ assignmentId, dutyName, userName, startTime, onClo
           {phase === "camera" && (
             <>
               <div className="relative bg-black rounded-xl overflow-hidden" style={{ aspectRatio: "16/9" }}>
-                <video
-                  ref={videoRef}
-                  autoPlay
-                  playsInline
-                  muted
-                  className="w-full h-full object-cover"
-                />
+                <video ref={videoRef} autoPlay playsInline muted className="w-full h-full object-cover" />
+                {/* ปุ่มกลับกล้อง */}
+                <button
+                  onClick={flipCamera}
+                  className="absolute top-2 right-2 bg-black/50 hover:bg-black/70 text-white rounded-full p-2 transition"
+                  title="กลับกล้อง"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                  </svg>
+                </button>
               </div>
               <canvas ref={canvasRef} className="hidden" />
               <p className="text-xs text-gray-400 text-center mt-2">
