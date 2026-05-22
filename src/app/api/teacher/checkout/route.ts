@@ -54,9 +54,14 @@ export async function POST(req: NextRequest) {
     } else {
       checkOutStatus = "LATE_OUT";
     }
+  } else if (category === "FRONT_GATE") {
+    // เวรประตูหน้า: ออกได้ตั้งแต่ endTime ของเวร (08:20)
+    // ก่อน 08:20 = EARLY_OUT, หลัง 08:20 = ON_TIME_OUT, ไม่มี LATE_OUT
+    const [endHour, endMin] = assignment.dutyType.endTime.split(":").map(Number);
+    const dutyEnd = new Date(now.getFullYear(), now.getMonth(), now.getDate(), endHour, endMin, 0);
+    checkOutStatus = now < dutyEnd ? "EARLY_OUT" : "ON_TIME_OUT";
   } else {
-    // FRONT_GATE / POINT: เทียบกับเวลาเลิกงาน (school_end_time, default 16:30)
-    // ออกได้ตั้งแต่เวลาเลิกงาน ไม่มี LATE_OUT มีแค่ EARLY_OUT / ON_TIME_OUT
+    // POINT: ออกได้ตั้งแต่ school_end_time (default 16:30) ไม่มี LATE_OUT
     const endTimeSetting = await prisma.systemSetting.findUnique({
       where: { key: "school_end_time" },
     });

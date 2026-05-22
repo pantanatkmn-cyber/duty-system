@@ -14,8 +14,9 @@ interface Props {
   assignmentId: number;
   dutyName: string;
   userName: string;
-  endTime: string; // "HH:mm" — สำหรับแสดงในหน้าและ modal เวรคาบ
-  checkoutDeadlineTime: string; // "HH:mm" — เวลาที่ถือว่าเลยเวลาออกเวร (16:30 หรือ endTime)
+  endTime: string;              // "HH:mm" — endTime ของ dutyType (ส่งให้ modal)
+  checkoutReadyTime: string;    // "HH:mm" — ออกได้ตั้งแต่เวลานี้ (แสดงในปุ่ม)
+  checkoutDeadlineTime: string; // "HH:mm" — เกินนี้ขึ้น "ลืมออกเวร"
   hasCheckIn: boolean;
   checkOut: CheckOutData | null;
 }
@@ -44,7 +45,7 @@ function isForgotCheckout(endTime: string): boolean {
 }
 
 export function CheckoutSection({
-  assignmentId, dutyName, userName, endTime, checkoutDeadlineTime, hasCheckIn, checkOut,
+  assignmentId, dutyName, userName, endTime, checkoutReadyTime, checkoutDeadlineTime, hasCheckIn, checkOut,
 }: Props) {
   const [showModal, setShowModal] = useState(false);
 
@@ -92,7 +93,7 @@ export function CheckoutSection({
             ) : (
               <p className="text-sm text-gray-600">ยังไม่ได้ออกเวร</p>
             )}
-            <p className="text-xs text-gray-400 mt-1">ออกเวรได้ตั้งแต่ {checkoutDeadlineTime} น.</p>
+            <p className="text-xs text-gray-400 mt-1">ออกเวรได้ตั้งแต่ {checkoutReadyTime} น.</p>
           </div>
           <button onClick={() => setShowModal(true)} className="btn-secondary text-sm">
             📷 ออกเวร
