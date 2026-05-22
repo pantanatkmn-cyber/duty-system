@@ -7,6 +7,7 @@ import { LogoutButton } from "@/app/dashboard/logout-button";
 import { DatePicker } from "./date-picker";
 import { PrintButton } from "./print-button";
 import { blobPhotoUrl } from "@/lib/photo-url";
+import { DownloadPhotosButton } from "./download-photos-button";
 
 // ===== ค่าคงที่ =====
 const CATEGORY_LABEL: Record<string, string> = {
@@ -133,6 +134,15 @@ export default async function ChiefPage({ searchParams }: Props) {
   const thaiDate = formatThaiDate(dateStr);
   const isToday = dateStr === todayStr;
 
+  // นับรูปทั้งหมดในวันนี้ (เช็กอิน + ออกเวร + เหตุการณ์)
+  const totalPhotos = assignments.reduce((sum, a) => {
+    let n = 0;
+    if (a.checkIn?.photoPath) n++;
+    if (a.checkIn?.checkOutPhoto) n++;
+    n += a.incidents.reduce((s, inc) => s + inc.photos.length, 0);
+    return sum + n;
+  }, 0);
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
@@ -169,7 +179,12 @@ export default async function ChiefPage({ searchParams }: Props) {
               <DatePicker currentDate={dateStr} />
               {isToday && <span className="badge badge-success text-xs">วันนี้</span>}
             </div>
-            {total > 0 && <PrintButton date={dateStr} />}
+            <div className="flex items-center gap-2 flex-wrap">
+              {total > 0 && <PrintButton date={dateStr} />}
+              {totalPhotos > 0 && (
+                <DownloadPhotosButton date={dateStr} photoCount={totalPhotos} />
+              )}
+            </div>
           </div>
         </div>
 
