@@ -60,13 +60,15 @@ export default async function DutyDetailPage({ params }: Props) {
   const ci = assignment.checkIn;
   const category = assignment.dutyType.category;
 
-  // เวลาออกเวรอ้างอิง: PERIOD ใช้ endTime, FRONT_GATE/POINT ใช้ school_end_time
+  // เวลาสำหรับแสดง "ลืมออกเวร":
+  // - PERIOD: ใช้ endTime ของเวรนั้น
+  // - FRONT_GATE/POINT: ใช้ school_forgot_checkout_time (default 17:30)
   let checkoutDeadlineTime = assignment.dutyType.endTime;
   if (category !== "PERIOD") {
-    const endTimeSetting = await prisma.systemSetting.findUnique({
-      where: { key: "school_end_time" },
+    const forgotSetting = await prisma.systemSetting.findUnique({
+      where: { key: "school_forgot_checkout_time" },
     });
-    checkoutDeadlineTime = endTimeSetting?.value ?? "16:30";
+    checkoutDeadlineTime = forgotSetting?.value ?? "17:30";
   }
 
 

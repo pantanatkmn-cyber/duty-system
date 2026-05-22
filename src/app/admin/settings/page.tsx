@@ -8,6 +8,7 @@ export default async function SettingsPage() {
 
   const gracePeriod = parseInt(map["grace_period_minutes"] ?? "5");
   const schoolEndTime = map["school_end_time"] ?? "16:30";
+  const schoolForgotTime = map["school_forgot_checkout_time"] ?? "17:30";
 
   return (
     <div className="space-y-5">
@@ -18,7 +19,7 @@ export default async function SettingsPage() {
         <h2 className="text-2xl font-bold text-gray-800 mt-2">ตั้งค่าระบบ</h2>
         <p className="text-sm text-gray-500 mt-1">ปรับค่าพฤติกรรมของระบบ</p>
       </div>
-      <SettingsForm gracePeriod={gracePeriod} schoolEndTime={schoolEndTime} />
+      <SettingsForm gracePeriod={gracePeriod} schoolEndTime={schoolEndTime} schoolForgotTime={schoolForgotTime} />
     </div>
   );
 }

@@ -4,12 +4,14 @@ import { useState } from "react";
 
 interface Props {
   gracePeriod: number;
-  schoolEndTime: string; // "HH:mm"
+  schoolEndTime: string;      // "HH:mm" เวลาที่ออกเวรได้ (ON_TIME_OUT)
+  schoolForgotTime: string;   // "HH:mm" เวลาที่ขึ้น "ลืมออกเวร"
 }
 
-export function SettingsForm({ gracePeriod, schoolEndTime }: Props) {
+export function SettingsForm({ gracePeriod, schoolEndTime, schoolForgotTime }: Props) {
   const [grace, setGrace] = useState(gracePeriod);
   const [endTime, setEndTime] = useState(schoolEndTime);
+  const [forgotTime, setForgotTime] = useState(schoolForgotTime);
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState<{ type: "ok" | "err"; text: string } | null>(null);
 
@@ -32,12 +34,18 @@ export function SettingsForm({ gracePeriod, schoolEndTime }: Props) {
       return;
     }
     setSaving(true);
-    const [ok1, ok2] = await Promise.all([
+    if (!/^\d{2}:\d{2}$/.test(forgotTime)) {
+      setMsg({ type: "err", text: "รูปแบบเวลาแสดงลืมออกเวรไม่ถูกต้อง (ใช้ HH:mm)" });
+      setSaving(false);
+      return;
+    }
+    const [ok1, ok2, ok3] = await Promise.all([
       saveSetting("grace_period_minutes", grace),
       saveSetting("school_end_time", endTime),
+      saveSetting("school_forgot_checkout_time", forgotTime),
     ]);
     setSaving(false);
-    if (!ok1 || !ok2) {
+    if (!ok1 || !ok2 || !ok3) {
       setMsg({ type: "err", text: "บันทึกไม่สำเร็จ" });
     } else {
       setMsg({ type: "ok", text: "บันทึกการตั้งค่าแล้ว" });
@@ -84,11 +92,9 @@ export function SettingsForm({ gracePeriod, schoolEndTime }: Props) {
       <div className="card space-y-4">
         {/* เวลาเลิกงาน */}
         <div>
-          <h3 className="font-semibold text-gray-800">เวลาเลิกงาน (School End Time)</h3>
+          <h3 className="font-semibold text-gray-800">เวลาเลิกงาน (ออกเวรได้)</h3>
           <p className="text-sm text-gray-500 mt-1">
-            เวลาที่ครูเวรประตูหน้า / เวรประจำจุด สามารถออกเวรได้
-            <br/>
-            <span className="text-xs text-gray-400">หากไม่ออกเวรภายใน ระบบจะแสดง "ลืมออกเวร"</span>
+            เวลาที่เร็วที่สุดที่ครูเวรประตูหน้า / เวรประจำจุด ออกเวรแล้วถือว่าตรงเวลา
           </p>
         </div>
         <div className="flex items-center gap-3">
@@ -96,6 +102,25 @@ export function SettingsForm({ gracePeriod, schoolEndTime }: Props) {
             type="time"
             value={endTime}
             onChange={(e) => setEndTime(e.target.value)}
+            className="form-input text-sm w-36 font-bold"
+          />
+          <span className="text-gray-600 text-sm">น.</span>
+        </div>
+      </div>
+
+      <div className="card space-y-4">
+        {/* เวลาที่แสดง "ลืมออกเวร" */}
+        <div>
+          <h3 className="font-semibold text-gray-800">เวลาแสดง "ลืมออกเวร"</h3>
+          <p className="text-sm text-gray-500 mt-1">
+            ถ้าครูเวรประตูหน้า / เวรประจำจุด ยังไม่ได้ออกเวรหลังเวลานี้ จะขึ้นว่า "ลืมออกเวร"
+          </p>
+        </div>
+        <div className="flex items-center gap-3">
+          <input
+            type="time"
+            value={forgotTime}
+            onChange={(e) => setForgotTime(e.target.value)}
             className="form-input text-sm w-36 font-bold"
           />
           <span className="text-gray-600 text-sm">น.</span>
