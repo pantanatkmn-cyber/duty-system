@@ -17,8 +17,8 @@ export async function GET(req: NextRequest) {
     return new NextResponse("Missing url parameter", { status: 400 });
   }
 
-  // ป้องกัน SSRF — อนุญาตเฉพาะ Vercel Blob URL เท่านั้น
-  if (!blobUrl.match(/^https:\/\/[a-z0-9]+\.blob\.vercel-storage\.com\//)) {
+  // ป้องกัน SSRF — อนุญาตเฉพาะ Vercel Blob URL (รวม .private. subdomain)
+  if (!blobUrl.match(/^https:\/\/[a-z0-9]+\.(private\.)?blob\.vercel-storage\.com\//)) {
     return new NextResponse("Invalid URL", { status: 400 });
   }
 

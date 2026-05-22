@@ -73,8 +73,8 @@ export async function GET(req: NextRequest) {
     entries.map(async (e) => {
       let fetchUrl = e.url;
 
-      // Vercel Blob private store: ต้องใช้ head() เพื่อรับ signed URL ก่อน
-      if (e.url.includes(".blob.vercel-storage.com")) {
+      // Vercel Blob private store (รวม .private. subdomain): ต้องใช้ head() เพื่อรับ signed URL ก่อน
+      if (e.url.includes(".blob.vercel-storage.com") || e.url.includes(".private.blob.vercel-storage.com")) {
         const meta = await head(e.url);
         fetchUrl = meta.downloadUrl;
       }
