@@ -2,8 +2,8 @@ import { prisma } from "@/lib/prisma";
 import Link from "next/link";
 import { SettingsForm } from "./settings-form";
 import type { AllSettings } from "./settings-form";
+import { DutyTimesForm } from "./duty-times-form";
 
-// ค่า default ถ้ายังไม่มีใน DB
 const DEFAULTS: AllSettings = {
   front_gate_grace_minutes: 0,
   front_gate_checkout_time: "08:20",
@@ -15,10 +15,17 @@ const DEFAULTS: AllSettings = {
 };
 
 export default async function SettingsPage() {
-  const rows = await prisma.systemSetting.findMany();
+  const [rows, dutyTypes] = await Promise.all([
+    prisma.systemSetting.findMany(),
+    prisma.dutyType.findMany({
+      where: { active: true },
+      orderBy: [{ category: "asc" }, { startTime: "asc" }],
+      select: { id: true, name: true, category: true, startTime: true, endTime: true },
+    }),
+  ]);
+
   const map = Object.fromEntries(rows.map((r) => [r.key, r.value]));
 
-  // รวมค่า default กับค่าใน DB
   const settings: AllSettings = {
     front_gate_grace_minutes: parseInt(map["front_gate_grace_minutes"] ?? map["grace_period_minutes"] ?? String(DEFAULTS.front_gate_grace_minutes)),
     front_gate_checkout_time: map["front_gate_checkout_time"] ?? DEFAULTS.front_gate_checkout_time,
@@ -30,15 +37,33 @@ export default async function SettingsPage() {
   };
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-6">
       <div>
         <Link href="/admin" className="text-sm text-brand-orange-600 hover:text-brand-orange-700 font-medium">
           ← กลับหน้า Admin
         </Link>
         <h2 className="text-2xl font-bold text-gray-800 mt-2">ตั้งค่าระบบ</h2>
-        <p className="text-sm text-gray-500 mt-1">ตั้งเวลาเข้า-ออกเวร และผ่อนผันแต่ละประเภทเวร</p>
+        <p className="text-sm text-gray-500 mt-1">จัดการเวลาและกฎการเข้า-ออกเวร</p>
       </div>
-      <SettingsForm settings={settings} />
+
+      {/* ─── ส่วนที่ 1: กฎเข้า-ออกเวร ─── */}
+      <div>
+        <h3 className="text-lg font-bold text-gray-700 mb-3 flex items-center gap-2">
+          <span>⚙️</span> กฎการเข้าและออกเวร
+        </h3>
+        <SettingsForm settings={settings} />
+      </div>
+
+      <div className="border-t border-gray-200 pt-6">
+        {/* ─── ส่วนที่ 2: เวลาของเวรแต่ละชนิด ─── */}
+        <h3 className="text-lg font-bold text-gray-700 mb-3 flex items-center gap-2">
+          <span>🕐</span> เวลาเริ่ม-สิ้นสุด ของเวรแต่ละชนิด
+        </h3>
+        <p className="text-sm text-gray-500 mb-4">
+          เวลาเริ่มใช้เปรียบเทียบกับเวลาเช็กอิน · เวลาสิ้นสุดใช้สำหรับเวรคาบและเวรประตูหน้า
+        </p>
+        <DutyTimesForm dutyTypes={dutyTypes} />
+      </div>
     </div>
   );
 }
