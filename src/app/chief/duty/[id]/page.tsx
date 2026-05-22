@@ -4,6 +4,7 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { LogoutButton } from "@/app/dashboard/logout-button";
 import Link from "next/link";
+import { blobPhotoUrl } from "@/lib/photo-url";
 
 const CATEGORY_ICON: Record<string, string> = {
   FRONT_GATE: "🏫",
@@ -145,9 +146,9 @@ export default async function ChiefDutyDetailPage({ params, searchParams }: Prop
           {ci ? (
             <div className="flex items-start gap-4">
               {ci.photoPath ? (
-                <a href={ci.photoPath} target="_blank" rel="noopener noreferrer" className="shrink-0">
+                <a href={blobPhotoUrl(ci.photoPath) ?? "#"} target="_blank" rel="noopener noreferrer" className="shrink-0">
                   <img
-                    src={ci.photoPath}
+                    src={blobPhotoUrl(ci.photoPath) ?? ""}
                     alt="รูปเช็กอิน"
                     className="h-24 w-24 rounded-lg object-cover border border-gray-200 hover:opacity-80 transition"
                   />
@@ -185,9 +186,9 @@ export default async function ChiefDutyDetailPage({ params, searchParams }: Prop
             <h3 className="text-sm font-semibold text-gray-500 mb-3">สถานะการออกเวร</h3>
             <div className="flex items-start gap-4">
               {ci.checkOutPhoto && (
-                <a href={ci.checkOutPhoto} target="_blank" rel="noopener noreferrer" className="shrink-0">
+                <a href={blobPhotoUrl(ci.checkOutPhoto) ?? "#"} target="_blank" rel="noopener noreferrer" className="shrink-0">
                   <img
-                    src={ci.checkOutPhoto}
+                    src={blobPhotoUrl(ci.checkOutPhoto) ?? ""}
                     alt="รูปออกเวร"
                     className="h-24 w-24 rounded-lg object-cover border border-gray-200 hover:opacity-80 transition"
                   />
@@ -248,9 +249,9 @@ export default async function ChiefDutyDetailPage({ params, searchParams }: Prop
                   {inc.photos.length > 0 && (
                     <div className="flex flex-wrap gap-2 mt-2 ml-8">
                       {inc.photos.map((p) => (
-                        <a key={p.id} href={p.photoPath} target="_blank" rel="noopener noreferrer">
+                        <a key={p.id} href={blobPhotoUrl(p.photoPath) ?? "#"} target="_blank" rel="noopener noreferrer">
                           <img
-                            src={p.photoPath}
+                            src={blobPhotoUrl(p.photoPath) ?? ""}
                             alt="รูปเหตุการณ์"
                             className="h-16 w-16 rounded-lg object-cover border border-yellow-200 hover:opacity-80 transition"
                           />

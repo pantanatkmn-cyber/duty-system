@@ -6,6 +6,7 @@ import Link from "next/link";
 import { LogoutButton } from "@/app/dashboard/logout-button";
 import { DatePicker } from "./date-picker";
 import { PrintButton } from "./print-button";
+import { blobPhotoUrl } from "@/lib/photo-url";
 
 // ===== ค่าคงที่ =====
 const CATEGORY_LABEL: Record<string, string> = {
@@ -303,9 +304,9 @@ export default async function ChiefPage({ searchParams }: Props) {
                       {inc.photos.length > 0 && (
                         <div className="flex flex-wrap gap-2 mt-2">
                           {inc.photos.map((p) => (
-                            <a key={p.id} href={p.photoPath} target="_blank" rel="noopener noreferrer">
+                            <a key={p.id} href={blobPhotoUrl(p.photoPath) ?? "#"} target="_blank" rel="noopener noreferrer">
                               <img
-                                src={p.photoPath}
+                                src={blobPhotoUrl(p.photoPath) ?? ""}
                                 alt="รูปเหตุการณ์"
                                 className="h-16 w-16 rounded-lg object-cover border border-yellow-200 hover:opacity-80 transition"
                               />

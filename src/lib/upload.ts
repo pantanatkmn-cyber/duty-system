@@ -12,7 +12,7 @@ export async function uploadPhoto(file: File, folder: string): Promise<string> {
     // === Vercel Blob ===
     const { put } = await import("@vercel/blob");
     const uniqueName = `${folder}/${Date.now()}_${Math.random().toString(36).slice(2)}.jpg`;
-    const blob = await put(uniqueName, file, { access: "public" });
+    const blob = await put(uniqueName, file, { access: "private" });
     return blob.url;
   }
 
