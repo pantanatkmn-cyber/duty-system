@@ -8,6 +8,7 @@ import { DatePicker } from "./date-picker";
 import { PrintButton } from "./print-button";
 import { blobPhotoUrl } from "@/lib/photo-url";
 import { DownloadPhotosButton } from "./download-photos-button";
+import { ExemptButton } from "./exempt-button";
 
 // ===== ค่าคงที่ =====
 const CATEGORY_LABEL: Record<string, string> = {
@@ -106,15 +107,19 @@ export default async function ChiefPage({ searchParams }: Props) {
     }),
   ]);
 
-  // คำนวณสถิติ
-  const total = assignments.length;
-  const checkedIn = assignments.filter((a) => !!a.checkIn).length;
-  const onTime = assignments.filter((a) => a.checkIn?.status === "ON_TIME").length;
-  const late = assignments.filter((a) => a.checkIn?.status === "LATE").length;
+  // แยก: อนุโลม vs ปกติ
+  const exemptedCount = assignments.filter((a) => a.exempted).length;
+  const activeAssignments = assignments.filter((a) => !a.exempted);
+
+  // คำนวณสถิติเฉพาะเวรที่ไม่ได้อนุโลม
+  const total = activeAssignments.length;
+  const checkedIn = activeAssignments.filter((a) => !!a.checkIn).length;
+  const onTime = activeAssignments.filter((a) => a.checkIn?.status === "ON_TIME" || a.checkIn?.status === "EARLY").length;
+  const late = activeAssignments.filter((a) => a.checkIn?.status === "LATE").length;
   const absent = total - checkedIn;
   const totalIncidents = assignments.reduce((sum, a) => sum + a.incidents.length, 0);
 
-  // จัดกลุ่มตามประเภทเวร
+  // จัดกลุ่มตามประเภทเวร (แสดงทุกเวรรวมถึงที่อนุโลม)
   const grouped = CATEGORY_ORDER.map((cat) => ({
     category: cat,
     label: CATEGORY_LABEL[cat],
@@ -217,8 +222,8 @@ export default async function ChiefPage({ searchParams }: Props) {
           </div>
         ) : (
           <>
-            {/* สรุปสถิติ */}
-            <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+            {/* สรุปสถิติ (ไม่นับเวรที่อนุโลม) */}
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
               {[
                 { label: "เวรทั้งหมด", value: total, bg: "bg-gray-100", text: "text-gray-800" },
                 { label: "เช็กอินแล้ว", value: checkedIn, bg: "bg-green-50", text: "text-green-800" },
@@ -229,6 +234,12 @@ export default async function ChiefPage({ searchParams }: Props) {
                   value: absent,
                   bg: absent > 0 ? "bg-red-50" : "bg-gray-50",
                   text: absent > 0 ? "text-red-800" : "text-gray-400",
+                },
+                {
+                  label: "อนุโลม",
+                  value: exemptedCount,
+                  bg: exemptedCount > 0 ? "bg-purple-50" : "bg-gray-50",
+                  text: exemptedCount > 0 ? "text-purple-800" : "text-gray-400",
                 },
               ].map((s) => (
                 <div key={s.label} className={`rounded-xl p-3 text-center ${s.bg}`}>
@@ -250,32 +261,56 @@ export default async function ChiefPage({ searchParams }: Props) {
                   {group.items.map((a) => {
                     const status = getStatusInfo(a.checkIn);
                     return (
-                      <Link
-                        key={a.id}
-                        href={`/chief/duty/${a.id}?from=${dateStr}`}
-                        className="flex items-center gap-3 rounded-lg border border-gray-100 bg-gray-50 px-3 py-2.5 hover:bg-brand-orange-50 hover:border-brand-orange-200 transition-colors"
-                      >
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-semibold text-gray-800 truncate">{a.user.fullName}</p>
-                          <p className="text-xs text-gray-500 mt-0.5">
-                            {a.dutyType.name} &nbsp;({a.dutyType.startTime}–{a.dutyType.endTime} น.)
-                          </p>
+                      <div key={a.id} className="flex items-stretch gap-2">
+                        {/* การ์ดหลัก — คลิกไปดูรายละเอียด */}
+                        <Link
+                          href={`/chief/duty/${a.id}?from=${dateStr}`}
+                          className={`flex-1 flex items-center gap-3 rounded-lg border px-3 py-2.5 hover:border-brand-orange-200 transition-colors ${
+                            a.exempted
+                              ? "bg-purple-50 border-purple-100 opacity-70 hover:opacity-100"
+                              : "bg-gray-50 border-gray-100 hover:bg-brand-orange-50"
+                          }`}
+                        >
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <p className="text-sm font-semibold text-gray-800 truncate">{a.user.fullName}</p>
+                              {a.exempted && (
+                                <span className="badge badge-info text-xs shrink-0">
+                                  🏳 อนุโลม{a.exemptReason ? ` · ${a.exemptReason}` : ""}
+                                </span>
+                              )}
+                            </div>
+                            <p className="text-xs text-gray-500 mt-0.5">
+                              {a.dutyType.name} &nbsp;({a.dutyType.startTime}–{a.dutyType.endTime} น.)
+                            </p>
+                          </div>
+                          <div className="flex items-center gap-2 shrink-0 flex-wrap justify-end">
+                            {a.checkIn && (
+                              <span className="text-xs text-gray-500">
+                                {formatTime(a.checkIn.checkInTime.toISOString())}
+                              </span>
+                            )}
+                            {!a.exempted && (
+                              <span className={`badge ${status.cls} text-xs`}>{status.label}</span>
+                            )}
+                            {a.incidents.length > 0 && (
+                              <span className="badge badge-warning text-xs">⚠️ {a.incidents.length}</span>
+                            )}
+                            <span className="text-gray-300 text-lg">›</span>
+                          </div>
+                        </Link>
+
+                        {/* ปุ่มอนุโลม */}
+                        <div className="flex items-center">
+                          <ExemptButton
+                            assignmentId={a.id}
+                            teacherName={a.user.fullName}
+                            dutyName={a.dutyType.name}
+                            exempted={a.exempted}
+                            exemptReason={a.exemptReason}
+                          />
                         </div>
-                        <div className="flex items-center gap-2 shrink-0 flex-wrap justify-end">
-                          {a.checkIn && (
-                            <span className="text-xs text-gray-500">
-                              {formatTime(a.checkIn.checkInTime.toISOString())}
-                            </span>
-                          )}
-                          <span className={`badge ${status.cls} text-xs`}>{status.label}</span>
-                          {a.incidents.length > 0 && (
-                            <span className="badge badge-warning text-xs">
-                              ⚠️ {a.incidents.length}
-                            </span>
-                          )}
-                          <span className="text-gray-300 text-lg">›</span>
-                        </div>
-                      </Link>
+                      </div>
                     );
                   })}
                 </div>

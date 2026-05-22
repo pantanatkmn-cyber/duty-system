@@ -68,6 +68,8 @@ model DutyAssignment {
   dutyDate   DateTime // เก็บแค่วัน (ตั้งเวลาเป็น 00:00)
   note        String?  // หมายเหตุจาก admin
   teacherNote String?  // หมายเหตุจากครู (บันทึกสรุปการปฏิบัติเวร)
+  exempted    Boolean  @default(false)  // อนุโลมเวร (ไม่ต้องมาเวร, ไม่คิดในสถิติ)
+  exemptReason String? // เหตุผลการอนุโลม เช่น "ไปราชการ", "ธุระด่วน"
   createdAt   DateTime @default(now())
 
   user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)

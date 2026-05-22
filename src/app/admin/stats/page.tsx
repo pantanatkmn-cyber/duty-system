@@ -79,8 +79,9 @@ export default async function StatsPage({ searchParams }: Props) {
     holidays.map((h) => `${h.date.getFullYear()}-${h.date.getMonth()}-${h.date.getDate()}`)
   );
 
-  // กรองออก assignment ที่ตรงกับวันหยุด
+  // กรองออก assignment ที่ตรงกับวันหยุด และที่ได้รับการอนุโลม
   const filteredAssignments = assignments.filter((a) => {
+    if (a.exempted) return false; // อนุโลมแล้ว ไม่นับในสถิติ
     const key = `${a.dutyDate.getFullYear()}-${a.dutyDate.getMonth()}-${a.dutyDate.getDate()}`;
     return !holidaySet.has(key);
   });
