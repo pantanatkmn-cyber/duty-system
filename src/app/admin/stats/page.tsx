@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
+import ClearStatsButtons from "./clear-stats-buttons";
 
 const THAI_MONTHS = [
   "มกราคม", "กุมภาพันธ์", "มีนาคม", "เมษายน", "พฤษภาคม", "มิถุนายน",
@@ -120,6 +121,11 @@ export default async function StatsPage({ searchParams }: Props) {
   const startStr = `${startDate.getFullYear()}-${String(startDate.getMonth() + 1).padStart(2, "0")}-${String(startDate.getDate()).padStart(2, "0")}`;
   const endStrParam = searchParams.end ?? `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
 
+  // endStr ที่แสดงผล (ไม่บวก 1 วัน — ใช้สำหรับส่งให้ปุ่มล้าง)
+  const endStrDisplay = range === "custom" && searchParams.end
+    ? searchParams.end
+    : `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+
   return (
     <div className="space-y-5">
       <div>
@@ -131,7 +137,7 @@ export default async function StatsPage({ searchParams }: Props) {
       </div>
 
       {/* เลือกช่วงเวลา */}
-      <div className="card">
+      <div className="card space-y-3">
         <div className="flex flex-wrap gap-2 items-center">
           <span className="text-sm font-semibold text-gray-700 mr-1">ช่วงเวลา:</span>
           {[
@@ -164,6 +170,16 @@ export default async function StatsPage({ searchParams }: Props) {
             />
             <button type="submit" className="btn-secondary text-sm">ดู</button>
           </form>
+        </div>
+
+        {/* ปุ่มล้างสถิติ */}
+        <div className="border-t border-gray-100 pt-3">
+          <p className="text-xs text-gray-400 mb-2">จัดการข้อมูลสถิติ:</p>
+          <ClearStatsButtons
+            startStr={startStr}
+            endStr={endStrDisplay}
+            rangeLabel={rangeLabel}
+          />
         </div>
       </div>
 
