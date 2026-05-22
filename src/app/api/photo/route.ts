@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
+import { get } from "@vercel/blob";
 
 // GET /api/photo?url=<blob_url>
-// ตรวจสิทธิ์ login แล้วดึงรูปจาก private Vercel Blob ส่งกลับให้ browser
+// ตรวจสิทธิ์ login แล้วดึงรูปจาก private Vercel Blob ผ่าน SDK
 export async function GET(req: NextRequest) {
   const session = await getServerSession(authOptions);
   if (!session) {
@@ -15,28 +16,22 @@ export async function GET(req: NextRequest) {
     return new NextResponse("Missing url", { status: 400 });
   }
 
-  // ป้องกัน SSRF — อนุญาตเฉพาะ Vercel Blob URL (รวม .private. subdomain)
+  // ป้องกัน SSRF — อนุญาตเฉพาะ Vercel Blob URL
   if (!blobUrl.includes(".blob.vercel-storage.com")) {
     return new NextResponse("Invalid URL", { status: 400 });
   }
 
-  const token = process.env.BLOB_READ_WRITE_TOKEN;
-
   try {
-    // ดึงรูปจาก private blob ด้วย Bearer token (Vercel รองรับวิธีนี้)
-    const response = await fetch(blobUrl, {
-      headers: token ? { Authorization: `Bearer ${token}` } : {},
-    });
+    // ใช้ get() จาก SDK — จัดการ auth กับ private store ให้อัตโนมัติ
+    const result = await get(blobUrl, { access: "private" });
 
-    if (!response.ok) {
-      console.error(`Blob fetch failed: ${response.status} ${response.statusText} — ${blobUrl}`);
-      return new NextResponse(`Blob fetch failed: ${response.status}`, { status: response.status });
+    if (!result || result.statusCode !== 200) {
+      return new NextResponse("Photo not found", { status: 404 });
     }
 
-    const buffer = await response.arrayBuffer();
-    return new NextResponse(buffer, {
+    return new NextResponse(result.stream, {
       headers: {
-        "Content-Type": response.headers.get("Content-Type") ?? "image/jpeg",
+        "Content-Type": result.blob.contentType ?? "image/jpeg",
         "Cache-Control": "private, max-age=3600",
       },
     });
