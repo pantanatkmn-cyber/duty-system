@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
+import { head } from "@vercel/blob";
 
 // GET /api/photo?url=<blob_url>
 // Proxy สำหรับ serve รูปจาก Vercel Blob (private store)
@@ -22,10 +23,9 @@ export async function GET(req: NextRequest) {
   }
 
   try {
-    const token = process.env.BLOB_READ_WRITE_TOKEN;
-    const response = await fetch(blobUrl, {
-      headers: token ? { authorization: `Bearer ${token}` } : {},
-    });
+    // head() จะ return downloadUrl ที่เป็น signed URL สำหรับ private blob
+    const blobMeta = await head(blobUrl);
+    const response = await fetch(blobMeta.downloadUrl);
 
     if (!response.ok) {
       return new NextResponse("Photo not found", { status: 404 });
@@ -35,11 +35,11 @@ export async function GET(req: NextRequest) {
     return new NextResponse(buffer, {
       headers: {
         "Content-Type": response.headers.get("Content-Type") ?? "image/jpeg",
-        // cache ใน browser ได้สูงสุด 1 ชั่วโมง แต่ไม่ให้ CDN cache (private)
         "Cache-Control": "private, max-age=3600",
       },
     });
-  } catch {
+  } catch (err) {
+    console.error("Photo proxy error:", err);
     return new NextResponse("Failed to fetch photo", { status: 500 });
   }
 }
