@@ -4,8 +4,7 @@ import { authOptions } from "@/lib/auth";
 import { head } from "@vercel/blob";
 
 // GET /api/photo?url=<blob_url>
-// Proxy สำหรับ serve รูปจาก Vercel Blob (private store)
-// ต้อง login ก่อนถึงดูรูปได้
+// ตรวจสิทธิ์แล้ว redirect ไปที่ signed downloadUrl ของ Vercel Blob private
 export async function GET(req: NextRequest) {
   const session = await getServerSession(authOptions);
   if (!session) {
@@ -18,28 +17,18 @@ export async function GET(req: NextRequest) {
   }
 
   // ป้องกัน SSRF — อนุญาตเฉพาะ Vercel Blob URL (รวม .private. subdomain)
-  if (!blobUrl.match(/^https:\/\/[a-z0-9]+\.(private\.)?blob\.vercel-storage\.com\//)) {
+  if (!blobUrl.includes(".blob.vercel-storage.com")) {
     return new NextResponse("Invalid URL", { status: 400 });
   }
 
   try {
-    // head() จะ return downloadUrl ที่เป็น signed URL สำหรับ private blob
     const blobMeta = await head(blobUrl);
-    const response = await fetch(blobMeta.downloadUrl);
-
-    if (!response.ok) {
-      return new NextResponse("Photo not found", { status: 404 });
-    }
-
-    const buffer = await response.arrayBuffer();
-    return new NextResponse(buffer, {
-      headers: {
-        "Content-Type": response.headers.get("Content-Type") ?? "image/jpeg",
-        "Cache-Control": "private, max-age=3600",
-      },
-    });
+    // redirect ไปที่ signed URL แทนการ proxy เนื้อหา
+    return NextResponse.redirect(blobMeta.downloadUrl, 302);
   } catch (err) {
-    console.error("Photo proxy error:", err);
-    return new NextResponse("Failed to fetch photo", { status: 500 });
+    const msg = err instanceof Error ? err.message : String(err);
+    console.error("Photo proxy error:", msg);
+    // ส่ง error จริงกลับเพื่อ debug
+    return new NextResponse(`head() failed: ${msg}`, { status: 500 });
   }
 }
