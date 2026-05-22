@@ -2,137 +2,185 @@
 
 import { useState } from "react";
 
-interface Props {
-  gracePeriod: number;
-  schoolEndTime: string;      // "HH:mm" เวลาที่ออกเวรได้ (ON_TIME_OUT)
-  schoolForgotTime: string;   // "HH:mm" เวลาที่ขึ้น "ลืมออกเวร"
+export interface AllSettings {
+  // เวรประตูหน้า
+  front_gate_grace_minutes: number;
+  front_gate_checkout_time: string;
+  front_gate_forgot_time: string;
+  // เวรประจำจุด
+  point_grace_minutes: number;
+  point_checkout_time: string;
+  point_forgot_time: string;
+  // เวรคาบ
+  period_grace_minutes: number;
 }
 
-export function SettingsForm({ gracePeriod, schoolEndTime, schoolForgotTime }: Props) {
-  const [grace, setGrace] = useState(gracePeriod);
-  const [endTime, setEndTime] = useState(schoolEndTime);
-  const [forgotTime, setForgotTime] = useState(schoolForgotTime);
+interface Props { settings: AllSettings }
+
+const CATEGORY_SECTIONS = [
+  {
+    key: "front_gate" as const,
+    label: "เวรประตูหน้า",
+    icon: "🏫",
+    note: "เวลาเข้าเวรเทียบกับเวลาเริ่มเวรใน DutyType (07:30) — ถ้าเกินเวลา = สายทันที",
+    hasCheckout: true,
+  },
+  {
+    key: "point" as const,
+    label: "เวรประจำจุด",
+    icon: "📍",
+    note: "เวลาเข้าเวรเทียบกับเวลาเริ่มแต่ละจุดใน DutyType — ถ้าเกิน = สาย",
+    hasCheckout: true,
+  },
+  {
+    key: "period" as const,
+    label: "เวรคาบ",
+    icon: "📚",
+    note: "เวลาออกเวรและลืมออกเวรใช้เวลาสิ้นสุดของแต่ละคาบอัตโนมัติ",
+    hasCheckout: false,
+  },
+];
+
+export function SettingsForm({ settings }: Props) {
+  const [vals, setVals] = useState<AllSettings>(settings);
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState<{ type: "ok" | "err"; text: string } | null>(null);
 
-  async function saveSetting(key: string, value: string | number) {
-    const res = await fetch("/api/admin/settings", {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ key, value: String(value) }),
-    });
-    return res.ok;
+  function set(key: keyof AllSettings, value: string | number) {
+    setVals((prev) => ({ ...prev, [key]: value }));
   }
 
   async function handleSave() {
-    if (grace < 0 || grace > 60) {
-      setMsg({ type: "err", text: "Grace period ต้องอยู่ระหว่าง 0 ถึง 60 นาที" });
-      return;
-    }
-    if (!/^\d{2}:\d{2}$/.test(endTime)) {
-      setMsg({ type: "err", text: "รูปแบบเวลาเลิกงานไม่ถูกต้อง (ใช้ HH:mm)" });
-      return;
-    }
     setSaving(true);
-    if (!/^\d{2}:\d{2}$/.test(forgotTime)) {
-      setMsg({ type: "err", text: "รูปแบบเวลาแสดงลืมออกเวรไม่ถูกต้อง (ใช้ HH:mm)" });
+    setMsg(null);
+    try {
+      const entries = Object.entries(vals).map(([key, value]) => ({ key, value: String(value) }));
+      const res = await fetch("/api/admin/settings/bulk", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ settings: entries }),
+      });
+      if (!res.ok) throw new Error("บันทึกไม่สำเร็จ");
+      setMsg({ type: "ok", text: "✅ บันทึกการตั้งค่าทั้งหมดแล้ว" });
+    } catch {
+      setMsg({ type: "err", text: "เกิดข้อผิดพลาด กรุณาลองใหม่" });
+    } finally {
       setSaving(false);
-      return;
-    }
-    const [ok1, ok2, ok3] = await Promise.all([
-      saveSetting("grace_period_minutes", grace),
-      saveSetting("school_end_time", endTime),
-      saveSetting("school_forgot_checkout_time", forgotTime),
-    ]);
-    setSaving(false);
-    if (!ok1 || !ok2 || !ok3) {
-      setMsg({ type: "err", text: "บันทึกไม่สำเร็จ" });
-    } else {
-      setMsg({ type: "ok", text: "บันทึกการตั้งค่าแล้ว" });
     }
   }
 
   return (
-    <div className="space-y-4 max-w-lg">
+    <div className="space-y-5 max-w-2xl">
       {msg && (
-        <div className={`rounded-lg px-4 py-3 text-sm border ${msg.type === "ok" ? "bg-green-50 text-green-800 border-green-200" : "bg-red-50 text-red-800 border-red-200"}`}>
+        <div className={`rounded-lg px-4 py-3 text-sm border ${
+          msg.type === "ok" ? "bg-green-50 text-green-800 border-green-200" : "bg-red-50 text-red-800 border-red-200"
+        }`}>
           {msg.text}
         </div>
       )}
 
-      <div className="card space-y-4">
-        {/* Grace Period เวรคาบ */}
-        <div>
-          <h3 className="font-semibold text-gray-800">ผ่อนผันสาย — เวรคาบ</h3>
-          <p className="text-sm text-gray-500 mt-1">
-            จำนวนนาทีผ่อนผันหลังเวลาเริ่มเวรคาบ ก่อนจะนับว่า "สาย"
-            <br/>
-            <span className="text-xs text-brand-orange-600">เวรประตูหน้า / เวรประจำจุด: ไม่มีผ่อนผัน (สายทันทีถ้าเกินเวลา)</span>
-          </p>
-        </div>
-        <div className="flex items-center gap-3">
-          <input
-            type="number"
-            min={0}
-            max={60}
-            value={grace}
-            onChange={(e) => setGrace(parseInt(e.target.value) || 0)}
-            className="form-input text-sm w-24 text-center text-lg font-bold"
-          />
-          <span className="text-gray-600 text-sm">นาที</span>
-        </div>
-        <div className="rounded-lg bg-gray-50 border border-gray-200 px-4 py-3 text-sm text-gray-600">
-          <p>เวรคาบที่เริ่ม 09:20 น. → เช็กอินก่อน{" "}
-            <strong>{String(9 + Math.floor((20 + grace) / 60)).padStart(2, "0")}:{String((20 + grace) % 60).padStart(2, "0")} น.</strong>{" "}
-            = ตรงเวลา
-          </p>
-        </div>
-      </div>
+      {CATEGORY_SECTIONS.map((sec) => {
+        const graceKey = `${sec.key}_grace_minutes` as keyof AllSettings;
+        const checkoutKey = `${sec.key}_checkout_time` as keyof AllSettings;
+        const forgotKey = `${sec.key}_forgot_time` as keyof AllSettings;
 
-      <div className="card space-y-4">
-        {/* เวลาเลิกงาน */}
-        <div>
-          <h3 className="font-semibold text-gray-800">เวลาเลิกงาน (ออกเวรได้)</h3>
-          <p className="text-sm text-gray-500 mt-1">
-            เวลาที่เร็วที่สุดที่ครูเวรประตูหน้า / เวรประจำจุด ออกเวรแล้วถือว่าตรงเวลา
-          </p>
-        </div>
-        <div className="flex items-center gap-3">
-          <input
-            type="time"
-            value={endTime}
-            onChange={(e) => setEndTime(e.target.value)}
-            className="form-input text-sm w-36 font-bold"
-          />
-          <span className="text-gray-600 text-sm">น.</span>
-        </div>
-      </div>
+        return (
+          <div key={sec.key} className="card space-y-4">
+            {/* หัว section */}
+            <div className="flex items-center gap-2 border-b border-gray-100 pb-3">
+              <span className="text-2xl">{sec.icon}</span>
+              <div>
+                <h3 className="font-bold text-gray-800">{sec.label}</h3>
+                <p className="text-xs text-gray-400 mt-0.5">{sec.note}</p>
+              </div>
+            </div>
 
-      <div className="card space-y-4">
-        {/* เวลาที่แสดง "ลืมออกเวร" */}
-        <div>
-          <h3 className="font-semibold text-gray-800">เวลาแสดง "ลืมออกเวร"</h3>
-          <p className="text-sm text-gray-500 mt-1">
-            ถ้าครูเวรประตูหน้า / เวรประจำจุด ยังไม่ได้ออกเวรหลังเวลานี้ จะขึ้นว่า "ลืมออกเวร"
-          </p>
-        </div>
-        <div className="flex items-center gap-3">
-          <input
-            type="time"
-            value={forgotTime}
-            onChange={(e) => setForgotTime(e.target.value)}
-            className="form-input text-sm w-36 font-bold"
-          />
-          <span className="text-gray-600 text-sm">น.</span>
-        </div>
-      </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {/* ผ่อนผันเข้าสาย */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  ⏱ ผ่อนผันเข้าสาย
+                </label>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="number"
+                    min={0}
+                    max={60}
+                    value={vals[graceKey] as number}
+                    onChange={(e) => set(graceKey, parseInt(e.target.value) || 0)}
+                    className="form-input text-sm w-20 text-center font-bold"
+                  />
+                  <span className="text-sm text-gray-500">นาที</span>
+                </div>
+                <p className="text-xs text-gray-400 mt-1">
+                  {vals[graceKey] === 0
+                    ? "สายทันทีถ้าเกินเวลาเริ่มเวร"
+                    : `สายถ้าเกินเวลาเริ่มเวร + ${vals[graceKey]} นาที`}
+                </p>
+              </div>
+
+              {/* เวลาออกเวร */}
+              {sec.hasCheckout ? (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    🚪 ออกเวรได้ตั้งแต่
+                  </label>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="time"
+                      value={vals[checkoutKey] as string}
+                      onChange={(e) => set(checkoutKey, e.target.value)}
+                      className="form-input text-sm w-36 font-bold"
+                    />
+                    <span className="text-sm text-gray-500">น.</span>
+                  </div>
+                  <p className="text-xs text-gray-400 mt-1">ออกก่อนนี้ = "ออกก่อนกำหนด"</p>
+                </div>
+              ) : (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    🚪 ออกเวรได้ตั้งแต่
+                  </label>
+                  <p className="text-sm text-gray-400 mt-2">ใช้เวลาสิ้นสุดคาบอัตโนมัติ</p>
+                </div>
+              )}
+
+              {/* เวลาลืมออกเวร */}
+              {sec.hasCheckout ? (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    ⚠️ ขึ้น "ลืมออกเวร" หลัง
+                  </label>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="time"
+                      value={vals[forgotKey] as string}
+                      onChange={(e) => set(forgotKey, e.target.value)}
+                      className="form-input text-sm w-36 font-bold"
+                    />
+                    <span className="text-sm text-gray-500">น.</span>
+                  </div>
+                  <p className="text-xs text-gray-400 mt-1">ถ้าไม่กดออกเวรภายในเวลานี้</p>
+                </div>
+              ) : (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    ⚠️ ขึ้น "ลืมออกเวร" หลัง
+                  </label>
+                  <p className="text-sm text-gray-400 mt-2">ใช้เวลาสิ้นสุดคาบอัตโนมัติ</p>
+                </div>
+              )}
+            </div>
+          </div>
+        );
+      })}
 
       <button
         onClick={handleSave}
         disabled={saving}
-        className="btn-primary text-sm"
+        className="btn-primary"
       >
-        {saving ? "กำลังบันทึก..." : "💾 บันทึกการตั้งค่า"}
+        {saving ? "กำลังบันทึก..." : "💾 บันทึกการตั้งค่าทั้งหมด"}
       </button>
     </div>
   );

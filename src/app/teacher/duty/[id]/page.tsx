@@ -60,26 +60,23 @@ export default async function DutyDetailPage({ params }: Props) {
   const ci = assignment.checkIn;
   const category = assignment.dutyType.category;
 
-  // checkoutReadyTime = เวลาที่ออกเวรแล้วถือว่าตรงเวลา (แสดงในปุ่ม)
-  // checkoutDeadlineTime = เวลาที่ขึ้น "ลืมออกเวร" ถ้ายังไม่ออก
+  // checkoutReadyTime = เวลาที่ออกได้ตรงเวลา, checkoutDeadlineTime = threshold "ลืมออกเวร"
   let checkoutReadyTime = assignment.dutyType.endTime;
   let checkoutDeadlineTime = assignment.dutyType.endTime;
 
-  if (category === "FRONT_GATE") {
-    // ออกได้ตั้งแต่ endTime ของเวร (08:20), ลืมออกเวรเมื่อเกิน 17:30
-    checkoutReadyTime = assignment.dutyType.endTime;
-    const forgotSetting = await prisma.systemSetting.findUnique({ where: { key: "school_forgot_checkout_time" } });
-    checkoutDeadlineTime = forgotSetting?.value ?? "17:30";
-  } else if (category === "POINT") {
-    // ออกได้ตั้งแต่ school_end_time (16:30), ลืมออกเวรเมื่อเกิน 17:30
-    const [endTimeSetting, forgotSetting] = await Promise.all([
-      prisma.systemSetting.findUnique({ where: { key: "school_end_time" } }),
-      prisma.systemSetting.findUnique({ where: { key: "school_forgot_checkout_time" } }),
+  if (category !== "PERIOD") {
+    const checkoutKey = category === "FRONT_GATE" ? "front_gate_checkout_time" : "point_checkout_time";
+    const forgotKey   = category === "FRONT_GATE" ? "front_gate_forgot_time"   : "point_forgot_time";
+    const defaultCheckout = category === "FRONT_GATE" ? assignment.dutyType.endTime : "16:30";
+
+    const [checkoutSetting, forgotSetting] = await Promise.all([
+      prisma.systemSetting.findUnique({ where: { key: checkoutKey } }),
+      prisma.systemSetting.findUnique({ where: { key: forgotKey } }),
     ]);
-    checkoutReadyTime = endTimeSetting?.value ?? "16:30";
-    checkoutDeadlineTime = forgotSetting?.value ?? "17:30";
+    checkoutReadyTime    = checkoutSetting?.value ?? defaultCheckout;
+    checkoutDeadlineTime = forgotSetting?.value   ?? "17:30";
   }
-  // PERIOD: ทั้งคู่ใช้ endTime ของเวร (ค่า default ข้างต้น)
+  // PERIOD: ทั้งคู่ใช้ endTime ของเวร
 
 
   return (

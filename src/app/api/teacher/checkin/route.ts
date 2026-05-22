@@ -45,17 +45,15 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: msg }, { status: 500 });
   }
 
-  // คำนวณ grace period ตามประเภทเวร
-  // - FRONT_GATE / POINT: ไม่มี grace (มาเกินเวลาแม้แต่นาทีเดียว = สาย)
-  // - PERIOD: ใช้ grace_period_minutes จาก SystemSetting (default 5 นาที)
+  // คำนวณ grace period ตามประเภทเวร จาก SystemSetting
   const category = assignment.dutyType.category;
-  let graceMinutes = 0;
-  if (category === "PERIOD") {
-    const graceSetting = await prisma.systemSetting.findUnique({
-      where: { key: "grace_period_minutes" },
-    });
-    graceMinutes = parseInt(graceSetting?.value ?? "5", 10);
-  }
+  const graceKey =
+    category === "FRONT_GATE" ? "front_gate_grace_minutes" :
+    category === "POINT"      ? "point_grace_minutes" :
+                                "period_grace_minutes";
+  const defaultGrace = category === "PERIOD" ? "5" : "0";
+  const graceSetting = await prisma.systemSetting.findUnique({ where: { key: graceKey } });
+  const graceMinutes = parseInt(graceSetting?.value ?? defaultGrace, 10);
 
   // คำนวณสถานะ: EARLY (ก่อนเวลา), ON_TIME (ตรงเวลา), LATE (สาย)
   const now = new Date();

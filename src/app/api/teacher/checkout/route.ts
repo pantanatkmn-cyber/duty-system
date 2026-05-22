@@ -55,20 +55,19 @@ export async function POST(req: NextRequest) {
       checkOutStatus = "LATE_OUT";
     }
   } else if (category === "FRONT_GATE") {
-    // เวรประตูหน้า: ออกได้ตั้งแต่ endTime ของเวร (08:20)
-    // ก่อน 08:20 = EARLY_OUT, หลัง 08:20 = ON_TIME_OUT, ไม่มี LATE_OUT
-    const [endHour, endMin] = assignment.dutyType.endTime.split(":").map(Number);
-    const dutyEnd = new Date(now.getFullYear(), now.getMonth(), now.getDate(), endHour, endMin, 0);
-    checkOutStatus = now < dutyEnd ? "EARLY_OUT" : "ON_TIME_OUT";
+    // เวรประตูหน้า: ออกได้ตั้งแต่ front_gate_checkout_time (default 08:20)
+    const s = await prisma.systemSetting.findUnique({ where: { key: "front_gate_checkout_time" } });
+    const timeStr = s?.value ?? assignment.dutyType.endTime;
+    const [h, m] = timeStr.split(":").map(Number);
+    const readyAt = new Date(now.getFullYear(), now.getMonth(), now.getDate(), h, m, 0);
+    checkOutStatus = now < readyAt ? "EARLY_OUT" : "ON_TIME_OUT";
   } else {
-    // POINT: ออกได้ตั้งแต่ school_end_time (default 16:30) ไม่มี LATE_OUT
-    const endTimeSetting = await prisma.systemSetting.findUnique({
-      where: { key: "school_end_time" },
-    });
-    const endTimeStr = endTimeSetting?.value ?? "16:30";
-    const [endHour, endMin] = endTimeStr.split(":").map(Number);
-    const schoolEnd = new Date(now.getFullYear(), now.getMonth(), now.getDate(), endHour, endMin, 0);
-    checkOutStatus = now < schoolEnd ? "EARLY_OUT" : "ON_TIME_OUT";
+    // POINT: ออกได้ตั้งแต่ point_checkout_time (default 16:30)
+    const s = await prisma.systemSetting.findUnique({ where: { key: "point_checkout_time" } });
+    const timeStr = s?.value ?? "16:30";
+    const [h, m] = timeStr.split(":").map(Number);
+    const readyAt = new Date(now.getFullYear(), now.getMonth(), now.getDate(), h, m, 0);
+    checkOutStatus = now < readyAt ? "EARLY_OUT" : "ON_TIME_OUT";
   }
 
   // อัปเดต CheckIn record
