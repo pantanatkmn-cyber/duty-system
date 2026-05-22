@@ -8,6 +8,7 @@ import { CheckInSection } from "./check-in-section";
 import { CheckoutSection } from "./checkout-section";
 import { IncidentSection } from "./incident-section";
 import { TeacherNoteSection } from "./teacher-note-section";
+import { resolvePhotoUrl } from "@/lib/photo-url";
 
 const CATEGORY_ICON: Record<string, string> = {
   FRONT_GATE: "🏫",
@@ -58,6 +59,30 @@ export default async function DutyDetailPage({ params }: Props) {
 
   const userName = session.user.name ?? session.user.username;
   const ci = assignment.checkIn;
+
+  // resolve photo URLs ทั้งหมดบน server (private blob → signed downloadUrl)
+  const [checkInPhoto, checkOutPhoto, incidentPhotos] = await Promise.all([
+    resolvePhotoUrl(ci?.photoPath),
+    resolvePhotoUrl(ci?.checkOutPhoto),
+    Promise.all(
+      assignment.incidents.flatMap((inc) =>
+        inc.photos.map((p) => resolvePhotoUrl(p.photoPath))
+      )
+    ),
+  ]);
+
+  // map กลับให้ incidents แต่ละตัวมี photo URL ที่ resolve แล้ว
+  let photoIdx = 0;
+  const resolvedIncidents = assignment.incidents.map((inc) => ({
+    id: inc.id,
+    incidentType: inc.incidentType,
+    description: inc.description,
+    reportedAt: inc.reportedAt.toISOString(),
+    photos: inc.photos.map((p) => ({
+      id: p.id,
+      photoPath: incidentPhotos[photoIdx++] ?? p.photoPath,
+    })),
+  }));
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -133,7 +158,7 @@ export default async function DutyDetailPage({ params }: Props) {
               checkIn={ci ? {
                 id: ci.id,
                 checkInTime: ci.checkInTime.toISOString(),
-                photoPath: ci.photoPath ?? null,
+                photoPath: checkInPhoto,
                 status: ci.status,
                 note: ci.note ?? null,
               } : null}
@@ -148,7 +173,7 @@ export default async function DutyDetailPage({ params }: Props) {
               hasCheckIn={!!ci}
               checkOut={ci?.checkOutTime ? {
                 checkOutTime: ci.checkOutTime.toISOString(),
-                checkOutPhoto: ci.checkOutPhoto!,
+                checkOutPhoto: checkOutPhoto ?? "",
                 checkOutStatus: ci.checkOutStatus!,
               } : null}
             />
@@ -167,13 +192,7 @@ export default async function DutyDetailPage({ params }: Props) {
         {!holiday && (
           <IncidentSection
             assignmentId={assignment.id}
-            initialIncidents={assignment.incidents.map((inc) => ({
-              id: inc.id,
-              incidentType: inc.incidentType,
-              description: inc.description,
-              reportedAt: inc.reportedAt.toISOString(),
-              photos: inc.photos.map((p) => ({ id: p.id, photoPath: p.photoPath })),
-            }))}
+            initialIncidents={resolvedIncidents}
           />
         )}
       </main>

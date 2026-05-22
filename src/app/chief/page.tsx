@@ -6,7 +6,7 @@ import Link from "next/link";
 import { LogoutButton } from "@/app/dashboard/logout-button";
 import { DatePicker } from "./date-picker";
 import { PrintButton } from "./print-button";
-import { blobPhotoUrl } from "@/lib/photo-url";
+import { resolvePhotoUrl } from "@/lib/photo-url";
 import { DownloadPhotosButton } from "./download-photos-button";
 
 // ===== ค่าคงที่ =====
@@ -122,14 +122,21 @@ export default async function ChiefPage({ searchParams }: Props) {
     items: assignments.filter((a) => a.dutyType.category === cat),
   })).filter((g) => g.items.length > 0);
 
-  // รวมเหตุการณ์ทั้งหมดพร้อมข้อมูลครู
-  const allIncidents = assignments.flatMap((a) =>
+  // รวมเหตุการณ์พร้อม resolve photo URLs บน server
+  const rawIncidents = assignments.flatMap((a) =>
     a.incidents.map((inc) => ({
       ...inc,
       teacherName: a.user.fullName,
       dutyName: a.dutyType.name,
     }))
   );
+  const allPhotoUrls = rawIncidents.flatMap((inc) => inc.photos.map((p) => resolvePhotoUrl(p.photoPath)));
+  const resolvedPhotoUrls = await Promise.all(allPhotoUrls);
+  let photoUrlIdx = 0;
+  const allIncidents = rawIncidents.map((inc) => ({
+    ...inc,
+    photos: inc.photos.map((p) => ({ ...p, photoPath: resolvedPhotoUrls[photoUrlIdx++] ?? p.photoPath })),
+  }));
 
   const thaiDate = formatThaiDate(dateStr);
   const isToday = dateStr === todayStr;
@@ -319,9 +326,9 @@ export default async function ChiefPage({ searchParams }: Props) {
                       {inc.photos.length > 0 && (
                         <div className="flex flex-wrap gap-2 mt-2">
                           {inc.photos.map((p) => (
-                            <a key={p.id} href={blobPhotoUrl(p.photoPath) ?? "#"} target="_blank" rel="noopener noreferrer">
+                            <a key={p.id} href={p.photoPath ?? "#"} target="_blank" rel="noopener noreferrer">
                               <img
-                                src={blobPhotoUrl(p.photoPath) ?? ""}
+                                src={p.photoPath ?? ""}
                                 alt="รูปเหตุการณ์"
                                 className="h-16 w-16 rounded-lg object-cover border border-yellow-200 hover:opacity-80 transition"
                               />

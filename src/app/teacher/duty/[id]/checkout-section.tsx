@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { CheckoutModal } from "./checkout-modal";
-import { blobPhotoUrl } from "@/lib/photo-url";
 
 interface CheckOutData {
   checkOutTime: string;
@@ -56,9 +55,9 @@ export function CheckoutSection({
       <div className="card">
         <h3 className="text-sm font-semibold text-gray-500 mb-3">สถานะการออกเวร</h3>
         <div className="flex items-start gap-4">
-          <a href={blobPhotoUrl(checkOut.checkOutPhoto) ?? "#"} target="_blank" rel="noopener noreferrer" className="shrink-0">
+          <a href={checkOut.checkOutPhoto} target="_blank" rel="noopener noreferrer" className="shrink-0">
             <img
-              src={blobPhotoUrl(checkOut.checkOutPhoto) ?? ""}
+              src={checkOut.checkOutPhoto}
               alt="รูปออกเวร"
               className="h-24 w-24 rounded-lg object-cover border border-gray-200 hover:opacity-80 transition"
             />

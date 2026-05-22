@@ -1,7 +1,6 @@
 "use client";
 
 import { useRef, useState, useEffect } from "react";
-import { blobPhotoUrl } from "@/lib/photo-url";
 import { useRouter } from "next/navigation";
 
 // ===== ประเภทเหตุการณ์ =====
@@ -290,9 +289,9 @@ export function IncidentSection({ assignmentId, initialIncidents }: Props) {
             {inc.photos.length > 0 && (
               <div className="flex flex-wrap gap-2 mt-2 ml-8">
                 {inc.photos.map((p) => (
-                  <a key={p.id} href={blobPhotoUrl(p.photoPath) ?? "#"} target="_blank" rel="noopener noreferrer">
+                  <a key={p.id} href={p.photoPath} target="_blank" rel="noopener noreferrer">
                     <img
-                      src={blobPhotoUrl(p.photoPath) ?? ""}
+                      src={p.photoPath}
                       alt="รูปเหตุการณ์"
                       className="h-16 w-16 rounded-lg object-cover border border-gray-200 hover:opacity-80 transition"
                     />
