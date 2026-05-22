@@ -1,18 +1,14 @@
-// ฟังก์ชันจัดการเวลาเขตไทย (Asia/Bangkok, UTC+7)
-// ใช้ Intl.DateTimeFormat เพื่อให้ถูกต้องทั้งบน Server (Vercel UTC) และ Client
+// ฟังก์ชันจัดการเวลาเขตไทย (UTC+7)
+// ใช้การบวก offset ตรงๆ เพื่อให้ทำงานถูกต้องทั้งบน Vercel (UTC) และเครื่องท้องถิ่น
 
-const TZ = "Asia/Bangkok";
-
-/** แปลง Date/ISO string → "HH:mm น." ในเวลาไทย (ตัวเลขอารบิค) */
+/** แปลง Date/ISO string → "HH:mm น." ในเวลาไทย (UTC+7) */
 export function formatThaiTime(dateOrIso: Date | string): string {
   const d = typeof dateOrIso === "string" ? new Date(dateOrIso) : dateOrIso;
-  // ใช้ th-TH-u-nu-latn เพื่อได้ตัวเลขอารบิค (07:30) ไม่ใช่ตัวเลขไทย (๐๗:๓๐)
-  return new Intl.DateTimeFormat("th-TH-u-nu-latn", {
-    timeZone: TZ,
-    hour: "2-digit",
-    minute: "2-digit",
-    hour12: false,
-  }).format(d) + " น.";
+  // บวก 7 ชั่วโมงตรงๆ แล้วอ่าน UTC — ไม่พึ่ง ICU timezone database
+  const bkk = new Date(d.getTime() + 7 * 60 * 60 * 1000);
+  const hh = String(bkk.getUTCHours()).padStart(2, "0");
+  const mm = String(bkk.getUTCMinutes()).padStart(2, "0");
+  return `${hh}:${mm} น.`;
 }
 
 /**
@@ -20,17 +16,13 @@ export function formatThaiTime(dateOrIso: Date | string): string {
  * ใช้สำหรับสร้าง dutyStart/cutoff ในการคำนวณสถานะเวร
  */
 export function bangkokMidnightOf(utcDate: Date): Date {
-  // ดึงวันที่ Bangkok ของ utcDate
-  const parts = new Intl.DateTimeFormat("en-CA", {
-    timeZone: TZ,
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  }).format(utcDate); // "YYYY-MM-DD"
-
-  const [y, m, d] = parts.split("-").map(Number);
-  // Bangkok midnight = UTC midnight - 7h
-  return new Date(Date.UTC(y, m - 1, d, -7, 0, 0));
+  // บวก 7h เพื่อได้วันที่ Bangkok แล้วตัดเวลาออก
+  const bkk = new Date(utcDate.getTime() + 7 * 60 * 60 * 1000);
+  const y = bkk.getUTCFullYear();
+  const m = bkk.getUTCMonth();
+  const d = bkk.getUTCDate();
+  // Bangkok midnight ในหน่วย UTC = UTC 17:00 ของวันก่อน
+  return new Date(Date.UTC(y, m, d, -7, 0, 0));
 }
 
 /** สร้าง Date สำหรับเวลาเวร (HH:mm ไทย) ของวันที่กำหนด */
