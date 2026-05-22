@@ -58,6 +58,16 @@ export default async function DutyDetailPage({ params }: Props) {
 
   const userName = session.user.name ?? session.user.username;
   const ci = assignment.checkIn;
+  const category = assignment.dutyType.category;
+
+  // เวลาออกเวรอ้างอิง: PERIOD ใช้ endTime, FRONT_GATE/POINT ใช้ school_end_time
+  let checkoutDeadlineTime = assignment.dutyType.endTime;
+  if (category !== "PERIOD") {
+    const endTimeSetting = await prisma.systemSetting.findUnique({
+      where: { key: "school_end_time" },
+    });
+    checkoutDeadlineTime = endTimeSetting?.value ?? "16:30";
+  }
 
 
   return (
@@ -146,6 +156,7 @@ export default async function DutyDetailPage({ params }: Props) {
               dutyName={assignment.dutyType.name}
               userName={userName}
               endTime={assignment.dutyType.endTime}
+              checkoutDeadlineTime={checkoutDeadlineTime}
               hasCheckIn={!!ci}
               checkOut={ci?.checkOutTime ? {
                 checkOutTime: ci.checkOutTime.toISOString(),

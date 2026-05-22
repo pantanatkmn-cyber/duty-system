@@ -37,23 +37,33 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: msg }, { status: 500 });
   }
 
-  // คำนวณสถานะออกเวร
+  // คำนวณสถานะออกเวรตามประเภทเวร
   const now = new Date();
-  const [endHour, endMin] = assignment.dutyType.endTime.split(":").map(Number);
-  const dutyEnd = new Date(
-    now.getFullYear(), now.getMonth(), now.getDate(),
-    endHour, endMin, 0
-  );
-  // ออกก่อนได้ 5 นาที
-  const earlyWindow = new Date(dutyEnd.getTime() - 5 * 60 * 1000);
-
+  const category = assignment.dutyType.category;
   let checkOutStatus: string;
-  if (now < earlyWindow) {
-    checkOutStatus = "EARLY_OUT";   // ออกเวรก่อนกำหนด
-  } else if (now <= dutyEnd) {
-    checkOutStatus = "ON_TIME_OUT"; // ออกเวรตรงเวลา
+
+  if (category === "PERIOD") {
+    // เวรคาบ: เทียบกับ endTime ของ dutyType + window 5 นาที
+    const [endHour, endMin] = assignment.dutyType.endTime.split(":").map(Number);
+    const dutyEnd = new Date(now.getFullYear(), now.getMonth(), now.getDate(), endHour, endMin, 0);
+    const earlyWindow = new Date(dutyEnd.getTime() - 5 * 60 * 1000);
+    if (now < earlyWindow) {
+      checkOutStatus = "EARLY_OUT";
+    } else if (now <= dutyEnd) {
+      checkOutStatus = "ON_TIME_OUT";
+    } else {
+      checkOutStatus = "LATE_OUT";
+    }
   } else {
-    checkOutStatus = "LATE_OUT";    // ออกเวรช้า
+    // FRONT_GATE / POINT: เทียบกับเวลาเลิกงาน (school_end_time, default 16:30)
+    // ออกได้ตั้งแต่เวลาเลิกงาน ไม่มี LATE_OUT มีแค่ EARLY_OUT / ON_TIME_OUT
+    const endTimeSetting = await prisma.systemSetting.findUnique({
+      where: { key: "school_end_time" },
+    });
+    const endTimeStr = endTimeSetting?.value ?? "16:30";
+    const [endHour, endMin] = endTimeStr.split(":").map(Number);
+    const schoolEnd = new Date(now.getFullYear(), now.getMonth(), now.getDate(), endHour, endMin, 0);
+    checkOutStatus = now < schoolEnd ? "EARLY_OUT" : "ON_TIME_OUT";
   }
 
   // อัปเดต CheckIn record

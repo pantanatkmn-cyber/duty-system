@@ -45,11 +45,17 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: msg }, { status: 500 });
   }
 
-  // ดึง grace period จาก SystemSetting (default 5 นาที)
-  const graceSetting = await prisma.systemSetting.findUnique({
-    where: { key: "grace_period_minutes" },
-  });
-  const graceMinutes = parseInt(graceSetting?.value ?? "5", 10);
+  // คำนวณ grace period ตามประเภทเวร
+  // - FRONT_GATE / POINT: ไม่มี grace (มาเกินเวลาแม้แต่นาทีเดียว = สาย)
+  // - PERIOD: ใช้ grace_period_minutes จาก SystemSetting (default 5 นาที)
+  const category = assignment.dutyType.category;
+  let graceMinutes = 0;
+  if (category === "PERIOD") {
+    const graceSetting = await prisma.systemSetting.findUnique({
+      where: { key: "grace_period_minutes" },
+    });
+    graceMinutes = parseInt(graceSetting?.value ?? "5", 10);
+  }
 
   // คำนวณสถานะ: EARLY (ก่อนเวลา), ON_TIME (ตรงเวลา), LATE (สาย)
   const now = new Date();
@@ -68,7 +74,7 @@ export async function POST(req: NextRequest) {
   if (now < dutyStart) {
     status = "EARLY"; // เข้าเวรก่อนเวลา
   } else if (now <= cutoff) {
-    status = "ON_TIME"; // ตรงเวลา (รวม grace period)
+    status = "ON_TIME"; // ตรงเวลา (รวม grace period ถ้ามี)
   } else {
     status = "LATE"; // สาย
   }
