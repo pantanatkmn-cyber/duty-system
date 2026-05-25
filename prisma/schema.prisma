@@ -33,6 +33,7 @@ model User {
   assignments            DutyAssignment[]
   chiefAssignments       ChiefAssignment[]
   weeklyChiefAssignments WeeklyChiefAssignment[]
+  submittedInspections   ChiefInspection[]
 }
 
 // ====================================================================
@@ -174,6 +175,37 @@ model WeeklyChiefAssignment {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([dayOfWeek])
+}
+
+// ====================================================================
+// CHIEF INSPECTION - การตรวจจุดสำคัญประจำวันโดยหัวหน้าเวร
+// ====================================================================
+// 1 วัน มี 1 record, ไม่ขึ้นกับว่าใครเป็นหัวหน้าเวร
+// results เก็บผลตรวจแต่ละจุด (8 จุด)
+
+model ChiefInspection {
+  id            Int                     @id @default(autoincrement())
+  inspectedDate String                  // "YYYY-MM-DD" — unique ต่อวัน
+  submittedAt   DateTime                // เวลาที่บันทึกล่าสุด
+  overallNote   String?                 // หมายเหตุภาพรวม
+  submittedById Int                     // ผู้บันทึก
+  submittedBy   User                   @relation(fields: [submittedById], references: [id])
+  results       InspectionPointResult[]
+
+  @@unique([inspectedDate])
+}
+
+// ผลตรวจแต่ละจุด (1 record ต่อ 1 จุด ต่อ 1 วัน)
+model InspectionPointResult {
+  id           Int             @id @default(autoincrement())
+  inspectionId Int
+  pointCode    String          // รหัสจุด เช่น "PARKING_29"
+  pointName    String          // ชื่อจุดภาษาไทย
+  status       String          // "CLEAN" | "DIRTY"
+  note         String?         // หมายเหตุเพิ่มเติม
+  inspection   ChiefInspection @relation(fields: [inspectionId], references: [id], onDelete: Cascade)
+
+  @@unique([inspectionId, pointCode])
 }
 
 // ====================================================================

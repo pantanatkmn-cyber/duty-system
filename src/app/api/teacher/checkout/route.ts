@@ -45,20 +45,33 @@ export async function POST(req: NextRequest) {
   let checkOutStatus: string;
 
   if (category === "PERIOD") {
+    const graceSetting = await prisma.systemSetting.findUnique({ where: { key: "period_checkout_grace_minutes" } });
+    const graceMinutes = parseInt(graceSetting?.value ?? "5", 10);
     const dutyEnd = bangkokDutyTime(now, assignment.dutyType.endTime);
     const earlyWindow = new Date(dutyEnd.getTime() - 5 * 60 * 1000);
+    const lateWindow = new Date(dutyEnd.getTime() + graceMinutes * 60 * 1000);
     if (now < earlyWindow) {
       checkOutStatus = "EARLY_OUT";
-    } else if (now <= dutyEnd) {
+    } else if (now <= lateWindow) {
       checkOutStatus = "ON_TIME_OUT";
     } else {
       checkOutStatus = "LATE_OUT";
     }
   } else if (category === "FRONT_GATE") {
-    const s = await prisma.systemSetting.findUnique({ where: { key: "front_gate_checkout_time" } });
-    const timeStr = s?.value ?? assignment.dutyType.endTime;
-    const readyAt = bangkokDutyTime(now, timeStr);
-    checkOutStatus = now < readyAt ? "EARLY_OUT" : "ON_TIME_OUT";
+    // 3 สถานะ: ออกก่อน readyAt = EARLY_OUT, readyAt→lateAt = ON_TIME_OUT, หลัง lateAt = LATE_OUT
+    const [checkoutS, lateS] = await Promise.all([
+      prisma.systemSetting.findUnique({ where: { key: "front_gate_checkout_time" } }),
+      prisma.systemSetting.findUnique({ where: { key: "front_gate_forgot_time" } }),
+    ]);
+    const readyAt = bangkokDutyTime(now, checkoutS?.value ?? "16:30");
+    const lateAt  = bangkokDutyTime(now, lateS?.value  ?? "18:00");
+    if (now < readyAt) {
+      checkOutStatus = "EARLY_OUT";
+    } else if (now < lateAt) {
+      checkOutStatus = "ON_TIME_OUT";
+    } else {
+      checkOutStatus = "LATE_OUT";
+    }
   } else {
     const s = await prisma.systemSetting.findUnique({ where: { key: "point_checkout_time" } });
     const timeStr = s?.value ?? "16:30";

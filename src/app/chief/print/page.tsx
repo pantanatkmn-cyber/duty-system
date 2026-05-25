@@ -4,6 +4,7 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { PrintControls } from "./print-controls";
 import { formatThaiTime } from "@/lib/thai-time";
+import { INSPECTION_POINTS } from "@/lib/inspection-points";
 
 // ===== ค่าคงที่ =====
 const CATEGORY_LABEL: Record<string, string> = {
@@ -77,7 +78,7 @@ export default async function PrintPage({ searchParams }: Props) {
   const dayOfWeek = jsDay === 0 ? 7 : jsDay;
 
   // ดึงข้อมูล
-  const [assignments, chiefAssignment] = await Promise.all([
+  const [assignments, chiefAssignment, inspection] = await Promise.all([
     prisma.dutyAssignment.findMany({
       where: { dutyDate: { gte: startOfDay, lt: startOfNextDay } },
       include: {
@@ -91,6 +92,14 @@ export default async function PrintPage({ searchParams }: Props) {
     prisma.weeklyChiefAssignment.findUnique({
       where: { dayOfWeek },
       include: { user: { select: { fullName: true } } },
+    }),
+    // ดึงผลตรวจจุดของวันนั้น
+    prisma.chiefInspection.findUnique({
+      where: { inspectedDate: dateStr },
+      include: {
+        results: true,
+        submittedBy: { select: { fullName: true } },
+      },
     }),
   ]);
 
@@ -299,6 +308,49 @@ export default async function PrintPage({ searchParams }: Props) {
               </table>
             </div>
           )}
+
+          {/* ===== ตารางตรวจจุดสำคัญประจำวัน ===== */}
+          <div style={{ breakInside: "avoid", marginTop: "1rem" }}>
+            <p className="font-bold text-sm mb-1 flex items-center gap-2">
+              การตรวจจุดสำคัญประจำวัน
+              {inspection?.submittedAt && (
+                <span className="font-normal text-gray-500 text-xs">
+                  (บันทึกเมื่อ {formatThaiTime(inspection.submittedAt.toISOString())}
+                  {inspection.submittedBy ? ` โดย ${inspection.submittedBy.fullName}` : ""})
+                </span>
+              )}
+            </p>
+            <table className="w-full border border-gray-300" style={{ fontSize: "0.72rem" }}>
+              <thead>
+                <tr className="bg-gray-100">
+                  <th className="border border-gray-300 px-2 py-1 text-left w-6">#</th>
+                  <th className="border border-gray-300 px-2 py-1 text-left">จุดตรวจ</th>
+                  <th className="border border-gray-300 px-2 py-1 text-center w-20">ผลตรวจ</th>
+                  <th className="border border-gray-300 px-2 py-1 text-left">หมายเหตุ</th>
+                </tr>
+              </thead>
+              <tbody>
+                {INSPECTION_POINTS.map((pt, i) => {
+                  const result = inspection?.results.find((r) => r.pointCode === pt.code);
+                  const isClean = result?.status === "CLEAN";
+                  const isDirty = result?.status === "DIRTY";
+                  return (
+                    <tr key={pt.code} className={i % 2 === 1 ? "bg-gray-50" : ""}>
+                      <td className="border border-gray-300 px-2 py-1 text-center text-gray-500">{i + 1}</td>
+                      <td className="border border-gray-300 px-2 py-1">{pt.name}</td>
+                      <td className="border border-gray-300 px-2 py-1 text-center font-semibold"
+                        style={{ color: isClean ? "#15803d" : isDirty ? "#b91c1c" : "#9ca3af" }}>
+                        {isClean ? "สะอาด ✓" : isDirty ? "สกปรก ✗" : "—"}
+                      </td>
+                      <td className="border border-gray-300 px-2 py-1 text-gray-600">
+                        {result?.note || "—"}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
 
           {/* ลายเซ็น */}
           <div className="mt-10 grid grid-cols-2 gap-12" style={{ breakInside: "avoid" }}>

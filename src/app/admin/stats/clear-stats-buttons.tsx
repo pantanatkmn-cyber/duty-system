@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 
 interface Props {
   // วันที่ปัจจุบันที่กำลังดูอยู่ (สำหรับ "ล้างช่วงนี้")
@@ -13,7 +12,6 @@ interface Props {
 type ModalMode = "range" | "all" | null;
 
 export default function ClearStatsButtons({ startStr, endStr, rangeLabel }: Props) {
-  const router = useRouter();
   const [modal, setModal] = useState<ModalMode>(null);
   const [loading, setLoading] = useState(false);
   const [resultMsg, setResultMsg] = useState<string | null>(null);
@@ -36,10 +34,8 @@ export default function ClearStatsButtons({ startStr, endStr, rangeLabel }: Prop
       if (!res.ok) {
         setResultMsg(`เกิดข้อผิดพลาด: ${data.error ?? "ไม่ทราบสาเหตุ"}`);
       } else {
-        setResultMsg(
-          `${data.message} (เช็กอิน ${data.deletedCheckIns} รายการ, เหตุการณ์ ${data.deletedIncidents} รายการ)`
-        );
-        router.refresh();
+        // reload แทน router.refresh() เพื่อให้ server component ดึงข้อมูลใหม่จาก DB จริงๆ
+        window.location.reload();
       }
     } catch {
       setResultMsg("เกิดข้อผิดพลาดในการเชื่อมต่อ");

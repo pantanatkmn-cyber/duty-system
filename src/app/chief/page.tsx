@@ -10,6 +10,7 @@ import { blobPhotoUrl } from "@/lib/photo-url";
 import { DownloadPhotosButton } from "./download-photos-button";
 import { ExemptButton } from "./exempt-button";
 import { formatThaiTime } from "@/lib/thai-time";
+import InspectionForm from "./inspection-form";
 
 // ===== ค่าคงที่ =====
 const CATEGORY_LABEL: Record<string, string> = {
@@ -82,8 +83,8 @@ export default async function ChiefPage({ searchParams }: Props) {
     if (!isWeeklyChief) redirect("/dashboard");
   }
 
-  // ดึงข้อมูลพร้อมกัน
-  const [assignments, chiefAssignment] = await Promise.all([
+  // ดึงข้อมูลพร้อมกัน (รวม inspection ของวันนั้น)
+  const [assignments, chiefAssignment, existingInspection] = await Promise.all([
     prisma.dutyAssignment.findMany({
       where: { dutyDate: { gte: startOfDay, lt: startOfNextDay } },
       include: {
@@ -101,6 +102,14 @@ export default async function ChiefPage({ searchParams }: Props) {
     prisma.weeklyChiefAssignment.findUnique({
       where: { dayOfWeek },
       include: { user: { select: { fullName: true } } },
+    }),
+    // ดึงผลตรวจจุดของวันนั้น
+    prisma.chiefInspection.findUnique({
+      where: { inspectedDate: dateStr },
+      include: {
+        results: true,
+        submittedBy: { select: { fullName: true } },
+      },
     }),
   ]);
 
@@ -313,6 +322,19 @@ export default async function ChiefPage({ searchParams }: Props) {
                 </div>
               </div>
             ))}
+
+            {/* ===== การตรวจจุดสำคัญประจำวัน (หัวหน้าเวร) ===== */}
+            <InspectionForm
+              date={dateStr}
+              initial={Object.fromEntries(
+                (existingInspection?.results ?? []).map((r) => [
+                  r.pointCode,
+                  { status: r.status, note: r.note },
+                ])
+              )}
+              submittedAt={existingInspection?.submittedAt?.toISOString() ?? null}
+              submittedByName={existingInspection?.submittedBy?.fullName ?? null}
+            />
 
             {/* เหตุการณ์ผิดปกติ */}
             <div className="card">

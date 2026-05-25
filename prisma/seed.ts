@@ -17,6 +17,16 @@ async function main() {
       value: "5", // ค่าเริ่มต้น 5 นาที
     },
   });
+
+  // grace period สำหรับออกเวรช้า (เวรคาบ) — admin ปรับได้
+  await prisma.systemSetting.upsert({
+    where: { key: "period_checkout_grace_minutes" },
+    update: {},
+    create: {
+      key: "period_checkout_grace_minutes",
+      value: "5", // ออกเวรช้าได้ไม่เกิน 5 นาที ถือว่า ON_TIME_OUT
+    },
+  });
   console.log("✅ ตั้งค่าผ่อนผัน 5 นาที");
 
   // --------------------------------------------------------------
