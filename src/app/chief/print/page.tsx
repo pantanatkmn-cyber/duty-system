@@ -29,6 +29,14 @@ function formatThaiDate(dateStr: string): string {
 }
 
 
+// แสดงช่วงเวลาเวรที่ "เป็นทางการ" ตามประเภท
+// FRONT_GATE และ POINT อยู่เวรตลอด 07:30–16:30
+// PERIOD ใช้เวลาจริงของคาบ
+function getDisplayTime(category: string, startTime: string, endTime: string): string {
+  if (category === "FRONT_GATE" || category === "POINT") return "07:30–16:30";
+  return `${startTime}–${endTime}`;
+}
+
 function getCheckInStatus(status: string | null | undefined): { text: string; color: string } {
   if (!status) return { text: "ขาด", color: "#b91c1c" };
   if (status === "ON_TIME") return { text: "ตรงเวลา", color: "#15803d" };
@@ -213,7 +221,7 @@ export default async function PrintPage({ searchParams }: Props) {
                         <td className="border-b border-r border-gray-300 px-2 py-1">{a.user.fullName}</td>
                         <td className="border-b border-r border-gray-300 px-2 py-1 text-gray-600">
                           {a.dutyType.name}
-                          <span className="text-gray-400 ml-1">({a.dutyType.startTime}–{a.dutyType.endTime})</span>
+                          <span className="text-gray-400 ml-1">({getDisplayTime(a.dutyType.category, a.dutyType.startTime, a.dutyType.endTime)})</span>
                         </td>
                         <td className="border-b border-r border-gray-300 px-2 py-1 text-center">
                           {a.checkIn ? formatThaiTime(a.checkIn.checkInTime.toISOString()) : "—"}

@@ -42,6 +42,14 @@ function formatThaiDate(dateStr: string): string {
 }
 
 
+// แสดงช่วงเวลาเวรที่ "เป็นทางการ" ตามประเภท
+// FRONT_GATE และ POINT อยู่เวรตลอด 07:30–16:30
+// PERIOD ใช้เวลาจริงของคาบ
+function getDisplayTime(category: string, startTime: string, endTime: string): string {
+  if (category === "FRONT_GATE" || category === "POINT") return "07:30–16:30";
+  return `${startTime}–${endTime}`;
+}
+
 function getStatusInfo(checkIn: { status: string } | null) {
   if (!checkIn) return { label: "ยังไม่เช็กอิน", cls: "badge-danger" };
   if (checkIn.status === "ON_TIME") return { label: "ตรงเวลา", cls: "badge-success" };
@@ -287,7 +295,7 @@ export default async function ChiefPage({ searchParams }: Props) {
                               )}
                             </div>
                             <p className="text-xs text-gray-500 mt-0.5">
-                              {a.dutyType.name} &nbsp;({a.dutyType.startTime}–{a.dutyType.endTime} น.)
+                              {a.dutyType.name} &nbsp;({getDisplayTime(a.dutyType.category, a.dutyType.startTime, a.dutyType.endTime)} น.)
                             </p>
                           </div>
                           <div className="flex items-center gap-2 shrink-0 flex-wrap justify-end">
