@@ -170,7 +170,7 @@ export function AssignmentManager({
     if (!res.ok) { setMsg({ type: "err", text: data.error ?? "เกิดข้อผิดพลาด" }); return; }
     setMsg({
       type: "ok",
-      text: `✅ ทำซ้ำเวรวัน${dayName}สำเร็จ! สร้าง ${data.created} รายการใน ${data.weeks} สัปดาห์ถัดไป`,
+      text: `✅ บันทึกเวรวัน${dayName}ซ้ำสำเร็จ! สร้าง ${data.created} รายการใน ${data.weeks} สัปดาห์ถัดไป`,
     });
   }
 
@@ -326,13 +326,13 @@ export function AssignmentManager({
                 <span>ยืนยันเวรวันนี้</span>
               </button>
 
-              {/* ปุ่มทำซ้ำ */}
+              {/* ปุ่มบันทึกเวรซ้ำ */}
               <button
                 onClick={() => setShowRepeat(true)}
                 className="btn-secondary flex items-center justify-center gap-2 text-sm"
               >
                 <span>🔁</span>
-                <span>ทำซ้ำ {repeatWeeks} สัปดาห์</span>
+                <span>บันทึกเวรนี้ซ้ำ {repeatWeeks} สัปดาห์</span>
               </button>
 
               {/* ปุ่มล้างเวร */}
@@ -507,17 +507,17 @@ export function AssignmentManager({
         </div>
       )}
 
-      {/* ===== Modal ยืนยันทำซ้ำ ===== */}
+      {/* ===== Modal ยืนยันบันทึกเวรซ้ำ ===== */}
       {showRepeat && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4">
           <div className="bg-white rounded-2xl w-full max-w-md shadow-2xl overflow-hidden">
             {/* Header */}
             <div className="bg-brand-orange-500 px-5 py-4">
               <h3 className="text-white font-bold text-base">
-                🔁 ทำซ้ำเวรวัน{dayName}
+                🔁 บันทึกเวรวัน{dayName}นี้ซ้ำ {repeatWeeks} สัปดาห์
               </h3>
               <p className="text-white/80 text-sm mt-0.5">
-                คัดลอก {assignments.length} เวร ไปยัง {repeatWeeks} สัปดาห์ถัดไป
+                บันทึกรายชื่อครูเวร {assignments.length} คน/เวร ในวันนี้ ไปยังวัน{dayName}อีก {repeatWeeks} สัปดาห์ถัดไป
               </p>
             </div>
 
@@ -553,7 +553,7 @@ export function AssignmentManager({
                   className="btn-primary flex-1"
                   disabled={repeating}
                 >
-                  {repeating ? "กำลังสร้าง..." : `✓ ยืนยัน ${repeatWeeks} สัปดาห์`}
+                  {repeating ? "กำลังบันทึก..." : `✓ บันทึกเวรซ้ำ ${repeatWeeks} สัปดาห์`}
                 </button>
               </div>
             </div>
