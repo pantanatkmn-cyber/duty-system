@@ -168,9 +168,12 @@ export function AssignmentManager({
     setRepeating(false);
     setShowRepeat(false);
     if (!res.ok) { setMsg({ type: "err", text: data.error ?? "เกิดข้อผิดพลาด" }); return; }
+    const parts = [`เพิ่ม ${data.created} รายการ`];
+    if (data.deleted > 0) parts.push(`ลบ ${data.deleted} รายการที่ไม่ตรง`);
+    if (data.skipped > 0) parts.push(`ข้าม ${data.skipped} รายการที่เช็กอินแล้ว`);
     setMsg({
       type: "ok",
-      text: `✅ บันทึกเวรวัน${dayName}ซ้ำสำเร็จ! สร้าง ${data.created} รายการใน ${data.weeks} สัปดาห์ถัดไป`,
+      text: `✅ ปรับปรุงเวรวัน${dayName}สำเร็จใน ${data.weeks} สัปดาห์ถัดไป (${parts.join(", ")})`,
     });
   }
 
@@ -536,9 +539,17 @@ export function AssignmentManager({
                 ))}
               </div>
 
-              <p className="text-xs text-gray-500 mt-3">
-                * ถ้าวันนั้นมีเวรของครูคนเดิมอยู่แล้ว จะข้ามไป (ไม่ซ้ำ)
-              </p>
+              <div className="mt-3 space-y-1.5 text-xs">
+                <p className="text-green-700 bg-green-50 rounded-lg px-3 py-1.5">
+                  ✅ เพิ่มครูที่อยู่ในวันนี้แต่ยังไม่มีในสัปดาห์นั้น
+                </p>
+                <p className="text-red-700 bg-red-50 rounded-lg px-3 py-1.5">
+                  🗑️ ลบครูที่ไม่อยู่ในวันนี้ออกจากสัปดาห์นั้น (เฉพาะที่ยังไม่เช็กอิน)
+                </p>
+                <p className="text-gray-500 bg-gray-50 rounded-lg px-3 py-1.5">
+                  ⚠️ เวรที่เช็กอินแล้วจะไม่ถูกแตะต้อง
+                </p>
+              </div>
 
               <div className="flex gap-3 mt-4">
                 <button
