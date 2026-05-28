@@ -105,10 +105,16 @@ function IncidentCameraPanel({
     const canvas = canvasRef.current;
     if (!video || !canvas) return;
 
-    canvas.width = video.videoWidth || 1280;
-    canvas.height = video.videoHeight || 720;
+    // จำกัดขนาด canvas สูงสุด 1280×720 ป้องกัน blob ใหญ่เกิน limit
+    const MAX_W = 1280;
+    const MAX_H = 720;
+    const videoW = video.videoWidth || MAX_W;
+    const videoH = video.videoHeight || MAX_H;
+    const scale = Math.min(1, MAX_W / videoW, MAX_H / videoH);
+    canvas.width = Math.round(videoW * scale);
+    canvas.height = Math.round(videoH * scale);
     const ctx = canvas.getContext("2d")!;
-    ctx.drawImage(video, 0, 0);
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
 
     // สแตมป์วันเวลาเล็ก ๆ มุมขวาล่าง
     const now = new Date();
@@ -136,6 +142,9 @@ function IncidentCameraPanel({
         if (blob) {
           const url = URL.createObjectURL(blob);
           onCapture(blob, url);
+        } else {
+          // กล้องบางรุ่น return null — แจ้งให้ทราบ
+          setError("ไม่สามารถบันทึกภาพได้ กรุณาลองใหม่อีกครั้ง");
         }
       },
       "image/jpeg",

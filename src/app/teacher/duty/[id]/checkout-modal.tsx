@@ -90,10 +90,17 @@ export function CheckoutModal({ assignmentId, dutyName, userName, endTime, onClo
     const now = new Date();
     setCaptureTime(now);
 
-    canvas.width = video.videoWidth || 1280;
-    canvas.height = video.videoHeight || 720;
+    // จำกัดขนาด canvas สูงสุด 1280×720
+    // ป้องกัน blob ใหญ่เกิน limit ของ server (Vercel 4.5 MB)
+    const MAX_W = 1280;
+    const MAX_H = 720;
+    const videoW = video.videoWidth || MAX_W;
+    const videoH = video.videoHeight || MAX_H;
+    const scale = Math.min(1, MAX_W / videoW, MAX_H / videoH);
+    canvas.width = Math.round(videoW * scale);
+    canvas.height = Math.round(videoH * scale);
     const ctx = canvas.getContext("2d")!;
-    ctx.drawImage(video, 0, 0);
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
 
     const lines = [
       getThaiDateTime(now),
@@ -127,6 +134,10 @@ export function CheckoutModal({ assignmentId, dutyName, userName, endTime, onClo
           setCapturedBlob(blob);
           setPreviewUrl(URL.createObjectURL(blob));
           setPhase("preview");
+        } else {
+          // กล้องบางรุ่นอาจ return null — แจ้ง error
+          setPhase("error");
+          setErrorMsg("ไม่สามารถบันทึกภาพได้ กรุณาลองใหม่อีกครั้ง");
         }
       },
       "image/jpeg",
@@ -153,8 +164,16 @@ export function CheckoutModal({ assignmentId, dutyName, userName, endTime, onClo
 
     try {
       const res = await fetch("/api/teacher/checkout", { method: "POST", body: fd });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? "เกิดข้อผิดพลาด");
+
+      // ป้องกัน: ถ้า server คืน HTML (เช่น 413 Too Large) แทน JSON จะไม่ throw ที่นี่ก่อน
+      let data: Record<string, unknown>;
+      try {
+        data = await res.json();
+      } catch {
+        throw new Error("ไฟล์รูปอาจมีขนาดใหญ่เกินไป หรือเกิดข้อผิดพลาดที่ server กรุณาลองถ่ายใหม่");
+      }
+
+      if (!res.ok) throw new Error((data.error as string) ?? "เกิดข้อผิดพลาด");
       setCheckOutStatus(data.checkOutStatus);
       setPhase("done");
       setTimeout(() => { router.refresh(); onClose(); }, 2000);
