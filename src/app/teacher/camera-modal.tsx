@@ -7,7 +7,6 @@ interface Props {
   assignmentId: number;
   dutyName: string;
   userName: string;
-  startTime: string; // "HH:mm" เวลาเริ่มเวร
   onClose: () => void;
 }
 
@@ -28,7 +27,7 @@ function getThaiDateTime(date: Date) {
   return `${d} ${m} ${y}  ${hh}:${mm}:${ss}`;
 }
 
-export function CameraModal({ assignmentId, dutyName, userName, startTime, onClose }: Props) {
+export function CameraModal({ assignmentId, dutyName, userName, onClose }: Props) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
@@ -36,19 +35,9 @@ export function CameraModal({ assignmentId, dutyName, userName, startTime, onClo
   const [phase, setPhase] = useState<Phase>("camera");
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [capturedBlob, setCapturedBlob] = useState<Blob | null>(null);
-  const [captureTime, setCaptureTime] = useState<Date | null>(null);
-  const [earlyReason, setEarlyReason] = useState("");
   const [errorMsg, setErrorMsg] = useState("");
   const [checkInStatus, setCheckInStatus] = useState<"ON_TIME" | "LATE" | "EARLY" | null>(null);
   const [facingMode, setFacingMode] = useState<"environment" | "user">("environment");
-
-  // คำนวณว่าเข้าก่อนเวลาหรือไม่ โดยเทียบ captureTime กับ startTime
-  const isEarly = (() => {
-    if (!captureTime) return false;
-    const [h, m] = startTime.split(":").map(Number);
-    const dutyStart = new Date(captureTime.getFullYear(), captureTime.getMonth(), captureTime.getDate(), h, m, 0);
-    return captureTime < dutyStart;
-  })();
 
   const router = useRouter();
 
@@ -131,7 +120,6 @@ export function CameraModal({ assignmentId, dutyName, userName, startTime, onClo
       ctx.fillText(line, bx + padding, by + padding + lineHeight * (i + 1) - fontSize * 0.2);
     });
 
-    setCaptureTime(new Date());
     stopCamera();
 
     canvas.toBlob(
@@ -155,16 +143,9 @@ export function CameraModal({ assignmentId, dutyName, userName, startTime, onClo
     if (!capturedBlob) return;
     setPhase("uploading");
 
-    // ตรวจ: ถ้าเข้าก่อนเวลาต้องมีเหตุผล
-    if (isEarly && !earlyReason.trim()) {
-      setPhase("preview");
-      return;
-    }
-
     const fd = new FormData();
     fd.append("assignmentId", String(assignmentId));
     fd.append("photo", capturedBlob, "checkin.jpg");
-    if (earlyReason.trim()) fd.append("note", earlyReason.trim());
 
     try {
       const res = await fetch("/api/teacher/checkin", { method: "POST", body: fd });
@@ -196,8 +177,6 @@ export function CameraModal({ assignmentId, dutyName, userName, startTime, onClo
     if (previewUrl) URL.revokeObjectURL(previewUrl);
     setPreviewUrl(null);
     setCapturedBlob(null);
-    setCaptureTime(null);
-    setEarlyReason("");
     setPhase("camera");
     openCamera(facingMode);
   }
@@ -255,37 +234,11 @@ export function CameraModal({ assignmentId, dutyName, userName, startTime, onClo
                 ภาพพร้อมสแตมป์วันเวลาแล้ว
               </p>
 
-              {/* แจ้งเตือนเข้าเวรก่อนเวลา */}
-              {isEarly && (
-                <div className="mt-3 rounded-lg bg-blue-50 border border-blue-200 px-3 py-2.5">
-                  <p className="text-sm font-semibold text-blue-800 mb-1">
-                    ⏰ คุณถ่ายรูปก่อนเวลาเริ่มเวร ({startTime} น.)
-                  </p>
-                  <p className="text-xs text-blue-600 mb-2">
-                    กรุณาระบุสาเหตุที่เข้าเวรก่อนเวลา
-                  </p>
-                  <textarea
-                    value={earlyReason}
-                    onChange={(e) => setEarlyReason(e.target.value)}
-                    placeholder="ระบุสาเหตุ เช่น มีภารกิจพิเศษ, ได้รับมอบหมายเพิ่มเติม..."
-                    rows={3}
-                    className="form-input text-sm resize-none w-full"
-                  />
-                  {!earlyReason.trim() && (
-                    <p className="text-xs text-red-500 mt-1">* จำเป็นต้องระบุสาเหตุ</p>
-                  )}
-                </div>
-              )}
-
               <div className="flex gap-3 mt-3">
                 <button onClick={retake} className="btn-secondary flex-1">
                   ถ่ายใหม่
                 </button>
-                <button
-                  onClick={uploadPhoto}
-                  disabled={isEarly && !earlyReason.trim()}
-                  className="btn-primary flex-1 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
+                <button onClick={uploadPhoto} className="btn-primary flex-1">
                   ยืนยันเช็กอิน
                 </button>
               </div>
