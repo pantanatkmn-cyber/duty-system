@@ -63,6 +63,13 @@ export default async function AdminPage() {
       desc: "กำหนดวันหยุด เวรในวันนั้นเป็นโมฆะ ไม่นับสถิติ",
       badge: null,
     },
+    {
+      href: "/admin/reports",
+      icon: "🖨️",
+      title: "รายงานย้อนหลัง",
+      desc: "เลือกวันที่เพื่อดูและพิมพ์รายงานเวรย้อนหลัง",
+      badge: null,
+    },
   ];
 
   return (
