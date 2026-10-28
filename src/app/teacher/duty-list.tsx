@@ -161,6 +161,7 @@ export function DutyList({ assignments, userName }: Props) {
           assignmentId={activeAssignment.id}
           dutyName={activeAssignment.dutyType.name}
           userName={userName}
+          startTime={activeAssignment.dutyType.startTime}
           onClose={() => setActiveAssignmentId(null)}
         />
       )}

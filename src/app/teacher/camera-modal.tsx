@@ -7,6 +7,7 @@ interface Props {
   assignmentId: number;
   dutyName: string;
   userName: string;
+  startTime: string; // "HH:mm" เวลาเริ่มเวร — ใช้ตรวจจับว่าสายหรือไม่
   onClose: () => void;
 }
 
@@ -27,7 +28,7 @@ function getThaiDateTime(date: Date) {
   return `${d} ${m} ${y}  ${hh}:${mm}:${ss}`;
 }
 
-export function CameraModal({ assignmentId, dutyName, userName, onClose }: Props) {
+export function CameraModal({ assignmentId, dutyName, userName, startTime, onClose }: Props) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
@@ -35,9 +36,19 @@ export function CameraModal({ assignmentId, dutyName, userName, onClose }: Props
   const [phase, setPhase] = useState<Phase>("camera");
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [capturedBlob, setCapturedBlob] = useState<Blob | null>(null);
+  const [captureTime, setCaptureTime] = useState<Date | null>(null);
+  const [lateReason, setLateReason] = useState("");
   const [errorMsg, setErrorMsg] = useState("");
   const [checkInStatus, setCheckInStatus] = useState<"ON_TIME" | "LATE" | "EARLY" | null>(null);
   const [facingMode, setFacingMode] = useState<"environment" | "user">("environment");
+
+  // ตรวจว่าถ่ายรูปหลังเวลาเริ่มเวรหรือไม่
+  const isLate = (() => {
+    if (!captureTime) return false;
+    const [h, m] = startTime.split(":").map(Number);
+    const dutyStart = new Date(captureTime.getFullYear(), captureTime.getMonth(), captureTime.getDate(), h, m, 0);
+    return captureTime > dutyStart;
+  })();
 
   const router = useRouter();
 
@@ -120,6 +131,7 @@ export function CameraModal({ assignmentId, dutyName, userName, onClose }: Props
       ctx.fillText(line, bx + padding, by + padding + lineHeight * (i + 1) - fontSize * 0.2);
     });
 
+    setCaptureTime(new Date());
     stopCamera();
 
     canvas.toBlob(
@@ -141,11 +153,18 @@ export function CameraModal({ assignmentId, dutyName, userName, onClose }: Props
 
   async function uploadPhoto() {
     if (!capturedBlob) return;
+    // ตรวจ: ถ้าสายต้องมีเหตุผล
+    if (isLate && !lateReason.trim()) {
+      setPhase("preview");
+      return;
+    }
+
     setPhase("uploading");
 
     const fd = new FormData();
     fd.append("assignmentId", String(assignmentId));
     fd.append("photo", capturedBlob, "checkin.jpg");
+    if (lateReason.trim()) fd.append("note", lateReason.trim());
 
     try {
       const res = await fetch("/api/teacher/checkin", { method: "POST", body: fd });
@@ -177,6 +196,8 @@ export function CameraModal({ assignmentId, dutyName, userName, onClose }: Props
     if (previewUrl) URL.revokeObjectURL(previewUrl);
     setPreviewUrl(null);
     setCapturedBlob(null);
+    setCaptureTime(null);
+    setLateReason("");
     setPhase("camera");
     openCamera(facingMode);
   }
@@ -234,11 +255,37 @@ export function CameraModal({ assignmentId, dutyName, userName, onClose }: Props
                 ภาพพร้อมสแตมป์วันเวลาแล้ว
               </p>
 
+              {/* แจ้งเตือนเข้าเวรสาย — บังคับระบุสาเหตุ */}
+              {isLate && (
+                <div className="mt-3 rounded-lg bg-yellow-50 border border-yellow-300 px-3 py-2.5">
+                  <p className="text-sm font-semibold text-yellow-800 mb-1">
+                    ⚠️ เข้าเวรหลังเวลา {startTime} น.
+                  </p>
+                  <p className="text-xs text-yellow-700 mb-2">
+                    กรุณาระบุสาเหตุที่มาเข้าเวรสาย
+                  </p>
+                  <textarea
+                    value={lateReason}
+                    onChange={(e) => setLateReason(e.target.value)}
+                    placeholder="ระบุสาเหตุ เช่น ติดสอน, รถติด, ภารกิจเร่งด่วน..."
+                    rows={3}
+                    className="form-input text-sm resize-none w-full"
+                  />
+                  {!lateReason.trim() && (
+                    <p className="text-xs text-red-500 mt-1">* จำเป็นต้องระบุสาเหตุ</p>
+                  )}
+                </div>
+              )}
+
               <div className="flex gap-3 mt-3">
                 <button onClick={retake} className="btn-secondary flex-1">
                   ถ่ายใหม่
                 </button>
-                <button onClick={uploadPhoto} className="btn-primary flex-1">
+                <button
+                  onClick={uploadPhoto}
+                  disabled={isLate && !lateReason.trim()}
+                  className="btn-primary flex-1 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
                   ยืนยันเช็กอิน
                 </button>
               </div>
